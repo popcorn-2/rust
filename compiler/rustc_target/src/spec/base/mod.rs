@@ -24,6 +24,7 @@ pub(crate) mod msvc;
 pub(crate) mod netbsd;
 pub(crate) mod nto_qnx;
 pub(crate) mod openbsd;
+pub(crate) mod popcorn;
 pub(crate) mod redox;
 pub(crate) mod solaris;
 pub(crate) mod solid;
