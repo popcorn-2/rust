@@ -82,6 +82,15 @@ pub fn exit(code: i32) -> ! {
         target_os = "motor" => {
             moto_rt::process::exit(code)
         }
+        target_os = "popcorn" => {
+            use crate::os::popcorn::proto::proc::ThreadTr;
+            if let Some(process_handle) = crate::os::popcorn::env::get_handle::<crate::os::popcorn::proto::proc::Thread>("thread.main") {
+                // thread.main handle should always exist but if not then just abort i guess?
+                let _ = process_handle.exit(code as isize);
+            }
+
+            crate::intrinsics::abort()
+        }
         all(target_vendor = "fortanix", target_env = "sgx") => {
             crate::sys::pal::abi::exit_with_code(code as _)
         }

@@ -16,6 +16,10 @@ mod io_slice {
             mod uefi;
             pub use uefi::*;
         }
+        target_os = "popcorn" => {
+            mod popcorn;
+            pub use popcorn::*;
+        }
         _ => {
             mod unsupported;
             pub use unsupported::*;
@@ -40,6 +44,10 @@ mod is_terminal {
         target_os = "motor" => {
             mod motor;
             pub use motor::*;
+        }
+        target_os = "popcorn" => {
+            mod popcorn;
+            pub use popcorn::*;
         }
         _ => {
             mod unsupported;

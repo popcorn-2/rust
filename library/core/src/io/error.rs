@@ -13,6 +13,7 @@ use crate::fmt;
 #[unstable(feature = "raw_os_error_ty", issue = "107792")]
 pub type RawOsError = cfg_select! {
     target_os = "uefi" => usize,
+    target_os = "popcorn" => isize,
     _ => i32,
 };
 

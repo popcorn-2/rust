@@ -12,7 +12,7 @@
 #![deny(unsafe_op_in_unsafe_fn)]
 
 // Force libc to be included even if unused. This is required by many platforms.
-#[cfg(not(all(windows, target_env = "msvc")))]
+#[cfg(not(any(target_os = "popcorn", all(windows, target_env = "msvc"))))]
 extern crate libc as _;
 
 cfg_select! {
@@ -34,6 +34,7 @@ cfg_select! {
         target_os = "solid_asp3",
         all(target_vendor = "fortanix", target_env = "sgx"),
         all(target_os = "wasi", panic = "unwind"),
+        target_os = "popcorn",
     ) => {
         mod libunwind;
         pub use libunwind::*;

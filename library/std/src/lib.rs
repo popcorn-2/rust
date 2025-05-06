@@ -249,6 +249,7 @@
 #![deny(unsafe_op_in_unsafe_fn)]
 #![allow(rustdoc::redundant_explicit_links)]
 #![warn(rustdoc::unescaped_backticks)]
+#![allow(rustdoc::broken_intra_doc_links)]
 // Ensure that std can be linked against panic_abort despite compiled with `-C panic=unwind`
 #![deny(ffi_unwind_calls)]
 // std may use features in a platform-specific way
@@ -263,6 +264,7 @@
 #![cfg_attr(all(test, target_os = "uefi"), feature(uefi_std))]
 #![cfg_attr(target_family = "wasm", feature(stdarch_wasm_atomic_wait))]
 #![cfg_attr(target_arch = "wasm64", feature(simd_wasm64))]
+#![cfg_attr(target_os = "popcorn", feature(marker_trait_attr, asm_goto_with_outputs, macro_metavar_expr))]
 //
 // Language features:
 // tidy-alphabetical-start
@@ -458,7 +460,7 @@ extern crate alloc as alloc_crate;
 // so include it here even if it's unused.
 #[doc(masked)]
 #[allow(unused_extern_crates)]
-#[cfg(not(all(windows, target_env = "msvc")))]
+#[cfg(all(not(target_os = "popcorn"), all(windows, target_env = "msvc")))]
 extern crate libc;
 
 // We always need an unwinder currently for backtraces

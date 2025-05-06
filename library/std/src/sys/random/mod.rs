@@ -102,6 +102,10 @@ cfg_select! {
         mod zkvm;
         pub use zkvm::fill_bytes;
     }
+    target_os = "popcorn" => {
+        mod popcorn;
+        pub use popcorn::{fill_bytes, hashmap_random_keys};
+    }
     any(
         all(target_family = "wasm", target_os = "unknown"),
         target_os = "xous",
@@ -122,6 +126,7 @@ cfg_select! {
     all(target_os = "wasi", not(target_env = "p1")),
     target_os = "xous",
     target_os = "vexos",
+    target_os = "popcorn"
 )))]
 pub fn hashmap_random_keys() -> (u64, u64) {
     let mut buf = [0; 16];

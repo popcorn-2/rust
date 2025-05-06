@@ -16,7 +16,8 @@ use crate::mem::ManuallyDrop;
     target_env = "sgx",
     target_os = "hermit",
     target_os = "trusty",
-    target_os = "motor"
+    target_os = "motor",
+    target_os = "popcorn"
 )))]
 use crate::sys::cvt;
 #[cfg(not(target_os = "trusty"))]

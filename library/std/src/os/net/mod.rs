@@ -6,7 +6,8 @@
     doc,
     any(
         all(target_arch = "wasm32", not(target_os = "wasi")),
-        all(target_vendor = "fortanix", target_env = "sgx")
+        all(target_vendor = "fortanix", target_env = "sgx"),
+        target_os = "popcorn"
     )
 )))]
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "cygwin", doc))]

@@ -1840,6 +1840,8 @@ supported_targets! {
     ("x86_64-unknown-linux-gnuasan", x86_64_unknown_linux_gnuasan),
     ("x86_64-unknown-linux-gnumsan", x86_64_unknown_linux_gnumsan),
     ("x86_64-unknown-linux-gnutsan", x86_64_unknown_linux_gnutsan),
+    
+    ("x86_64-unknown-popcorn", x86_64_unknown_popcorn),
 }
 
 /// Cow-Vec-Str: Cow<'static, [Cow<'static, str>]>
@@ -2008,6 +2010,7 @@ crate::target_spec_enum! {
         Nto = "nto",
         NuttX = "nuttx",
         OpenBsd = "openbsd",
+        Popcorn = "popcorn",
         Psp = "psp",
         Psx = "psx",
         Qurt = "qurt",

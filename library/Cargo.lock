@@ -69,6 +69,15 @@ name = "core"
 version = "0.0.0"
 
 [[package]]
+name = "core-protocols"
+version = "0.1.0"
+source = "git+https://github.com/popcorn-2/core-protocols.git#300777249835617df3b1cb899aa639fbe4d78434"
+dependencies = [
+ "compiler_builtins",
+ "rustc-std-workspace-core",
+]
+
+[[package]]
 name = "coretests"
 version = "0.0.0"
 dependencies = [
@@ -326,6 +335,7 @@ dependencies = [
  "alloc",
  "cfg-if",
  "core",
+ "core-protocols",
  "dlmalloc",
  "fortanix-sgx-abi",
  "hashbrown",

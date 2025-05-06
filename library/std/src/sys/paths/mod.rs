@@ -17,6 +17,10 @@ cfg_select! {
             pub use super::unsupported::{SplitPaths, split_paths, JoinPathsError, join_paths, home_dir};
         }
     }
+    target_os = "popcorn" => {
+        mod popcorn;
+        use popcorn as imp;
+    }
     all(target_vendor = "fortanix", target_env = "sgx") => {
         mod sgx;
         #[expect(dead_code)]

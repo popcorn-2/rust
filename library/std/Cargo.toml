@@ -32,7 +32,7 @@ rustc-demangle = { version = "0.1.27", features = ['rustc-dep-of-std'] }
 miniz_oxide = { version = "0.8.0", optional = true, default-features = false }
 addr2line = { version = "0.25.0", optional = true, default-features = false }
 
-[target.'cfg(not(all(windows, target_env = "msvc")))'.dependencies]
+[target.'cfg(not(any(target_os = "popcorn", all(windows, target_env = "msvc"))))'.dependencies]
 libc = { version = "0.2.185", default-features = false, features = [
     'rustc-dep-of-std',
 ], public = true }
@@ -168,4 +168,6 @@ check-cfg = [
     'cfg(target_has_reliable_f16_math)',
     'cfg(target_has_reliable_f128)',
     'cfg(target_has_reliable_f128_math)',
+    # #[cfg(bootstrap)] x86_64-unknown-popcorn
+    'cfg(target_os, values("popcorn"))',
 ]

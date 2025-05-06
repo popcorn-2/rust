@@ -20,7 +20,8 @@ pub mod raw;
     doc,
     any(
         all(target_arch = "wasm32", not(target_os = "wasi")),
-        all(target_vendor = "fortanix", target_env = "sgx")
+        all(target_vendor = "fortanix", target_env = "sgx"),
+        target_os = "popcorn"
     )
 ))]
 #[unstable(issue = "none", feature = "std_internals")]
@@ -29,7 +30,8 @@ pub mod darwin {}
     doc,
     any(
         all(target_arch = "wasm32", not(target_os = "wasi")),
-        all(target_vendor = "fortanix", target_env = "sgx")
+        all(target_vendor = "fortanix", target_env = "sgx"),
+        target_os = "popcorn"
     )
 ))]
 #[unstable(issue = "none", feature = "std_internals")]
@@ -38,7 +40,8 @@ pub mod unix {}
     doc,
     any(
         all(target_arch = "wasm32", not(target_os = "wasi")),
-        all(target_vendor = "fortanix", target_env = "sgx")
+        all(target_vendor = "fortanix", target_env = "sgx"),
+        target_os = "popcorn"
     )
 ))]
 #[unstable(issue = "none", feature = "std_internals")]
@@ -47,7 +50,8 @@ pub mod linux {}
     doc,
     any(
         all(target_arch = "wasm32", not(target_os = "wasi")),
-        all(target_vendor = "fortanix", target_env = "sgx")
+        all(target_vendor = "fortanix", target_env = "sgx"),
+        target_os = "popcorn"
     )
 ))]
 #[unstable(issue = "none", feature = "std_internals")]
@@ -56,7 +60,8 @@ pub mod wasi {}
     doc,
     any(
         all(target_arch = "wasm32", not(target_os = "wasi")),
-        all(target_vendor = "fortanix", target_env = "sgx")
+        all(target_vendor = "fortanix", target_env = "sgx"),
+        target_os = "popcorn"
     )
 ))]
 #[unstable(issue = "none", feature = "std_internals")]
@@ -67,7 +72,8 @@ pub mod windows {}
     doc,
     any(
         all(target_arch = "wasm32", not(target_os = "wasi")),
-        all(target_vendor = "fortanix", target_env = "sgx")
+        all(target_vendor = "fortanix", target_env = "sgx"),
+        target_os = "popcorn"
     )
 )))]
 #[cfg(any(target_vendor = "apple", doc))]
@@ -78,7 +84,8 @@ pub mod darwin;
     doc,
     any(
         all(target_arch = "wasm32", not(target_os = "wasi")),
-        all(target_vendor = "fortanix", target_env = "sgx")
+        all(target_vendor = "fortanix", target_env = "sgx"),
+        target_os = "popcorn"
     )
 )))]
 #[cfg(all(not(target_os = "hermit"), any(unix, doc)))]
@@ -89,7 +96,8 @@ pub mod unix;
     doc,
     any(
         all(target_arch = "wasm32", not(target_os = "wasi")),
-        all(target_vendor = "fortanix", target_env = "sgx")
+        all(target_vendor = "fortanix", target_env = "sgx"),
+        target_os = "popcorn"
     )
 )))]
 #[cfg(any(target_os = "linux", doc))]
@@ -100,7 +108,8 @@ pub mod linux;
     doc,
     any(
         all(target_arch = "wasm32", not(target_os = "wasi")),
-        all(target_vendor = "fortanix", target_env = "sgx")
+        all(target_vendor = "fortanix", target_env = "sgx"),
+        target_os = "popcorn"
     )
 )))]
 #[cfg(any(target_os = "wasi", any(target_env = "p1", target_env = "p2"), doc))]
@@ -114,7 +123,8 @@ pub mod wasip2;
     doc,
     any(
         all(target_arch = "wasm32", not(target_os = "wasi")),
-        all(target_vendor = "fortanix", target_env = "sgx")
+        all(target_vendor = "fortanix", target_env = "sgx"),
+        target_os = "popcorn"
     )
 )))]
 #[cfg(any(windows, doc))]
@@ -165,6 +175,8 @@ pub mod nto;
 pub mod nuttx;
 #[cfg(target_os = "openbsd")]
 pub mod openbsd;
+#[cfg(target_os = "popcorn")]
+pub mod popcorn;
 #[cfg(target_os = "redox")]
 pub mod redox;
 #[cfg(target_os = "rtems")]

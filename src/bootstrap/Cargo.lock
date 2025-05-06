@@ -95,9 +95,8 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.2.28"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ad45f4f74e4e20eaa392913b7b33a7091c87e59628f4dd27888205ad888843c"
+version = "1.2.20"
+source = "git+https://github.com/popcorn-2/cc-rs.git#ea5c4784f7b0958719b49bd6c6b7f798076609c2"
 dependencies = [
  "shlex",
 ]

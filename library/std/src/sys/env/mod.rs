@@ -31,6 +31,10 @@ cfg_select! {
         mod motor;
         pub use motor::*;
     }
+    target_os = "popcorn" => {
+        mod popcorn;
+        pub use popcorn::*;
+    }
     all(target_vendor = "fortanix", target_env = "sgx") => {
         mod sgx;
         pub use sgx::*;

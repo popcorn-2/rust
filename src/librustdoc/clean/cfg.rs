@@ -520,6 +520,7 @@ fn human_readable_target_os(os: Symbol) -> Option<&'static str> {
         Nto => "QNX Neutrino",
         NuttX => "NuttX",
         OpenBsd => "OpenBSD",
+        Popcorn => "Popcorn",
         Psp => "Play Station Portable",
         Psx => "Play Station 1",
         Qurt => "QuRT",
