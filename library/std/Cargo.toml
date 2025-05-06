@@ -34,7 +34,7 @@ rustc-demangle = { version = "0.1.24", features = ['rustc-dep-of-std'] }
 miniz_oxide = { version = "0.8.0", optional = true, default-features = false }
 addr2line = { version = "0.24.0", optional = true, default-features = false }
 
-[target.'cfg(not(all(windows, target_env = "msvc")))'.dependencies]
+[target.'cfg(not(any(all(target_os = "popcorn", target_env = "native"), all(windows, target_env = "msvc"))))'.dependencies]
 libc = { version = "0.2.172", default-features = false, features = [
     'rustc-dep-of-std',
 ], public = true }
@@ -76,6 +76,12 @@ fortanix-sgx-abi = { version = "0.5.0", features = [
 hermit-abi = { version = "0.5.0", features = [
     'rustc-dep-of-std',
 ], public = true }
+
+
+[target.'cfg(all(target_os = "popcorn", target_env = "native"))'.dependencies]
+core-protocols = { version = "0.1.0", features = [
+    'rustc-dep-of-std',
+], public = true, git = "https://github.com/popcorn-2/core-protocols.git" }
 
 [target.'cfg(target_os = "wasi")'.dependencies]
 wasi = { version = "0.11.0", features = [
@@ -163,4 +169,7 @@ check-cfg = [
     # and to the `backtrace` crate which messes-up with Cargo list
     # of declared features, we therefor expect any feature cfg
     'cfg(feature, values(any()))',
+    # #[cfg(bootstrap)] x86_64-unknown-popcorn-native
+    'cfg(target_os, values("popcorn"))',
+    'cfg(target_env, values("native"))',
 ]

@@ -12,7 +12,7 @@
 #![deny(unsafe_op_in_unsafe_fn)]
 
 // Force libc to be included even if unused. This is required by many platforms.
-#[cfg(not(all(windows, target_env = "msvc")))]
+#[cfg(not(any(all(target_os = "popcorn", target_env = "native"), all(windows, target_env = "msvc"))))]
 extern crate libc as _;
 
 cfg_if::cfg_if! {

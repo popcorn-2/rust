@@ -441,7 +441,7 @@ extern crate alloc as alloc_crate;
 // so include it here even if it's unused.
 #[doc(masked)]
 #[allow(unused_extern_crates)]
-#[cfg(not(all(windows, target_env = "msvc")))]
+#[cfg(all(not(any(target_os = "popcorn", target_env = "native")), all(windows, target_env = "msvc")))]
 extern crate libc;
 
 // We always need an unwinder currently for backtraces

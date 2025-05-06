@@ -50,7 +50,7 @@ pub unsafe fn __rust_start_panic(_payload: &mut dyn PanicPayload) -> u32 {
     }
 
     cfg_if::cfg_if! {
-        if #[cfg(any(unix, target_os = "solid_asp3"))] {
+        if #[cfg(all(not(all(target_os = "popcorn", target_env = "native")), any(unix, target_os = "solid_asp3")))] {
             unsafe fn abort() -> ! {
                 unsafe { libc::abort(); }
             }
@@ -58,6 +58,7 @@ pub unsafe fn __rust_start_panic(_payload: &mut dyn PanicPayload) -> u32 {
                             all(target_vendor = "fortanix", target_env = "sgx"),
                             target_os = "xous",
                             target_os = "uefi",
+                            all(target_os = "popcorn", target_env = "native"),
         ))] {
             unsafe fn abort() -> ! {
                 // call std::sys::abort_internal

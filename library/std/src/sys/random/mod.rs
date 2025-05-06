@@ -75,6 +75,9 @@ cfg_if::cfg_if! {
     } else if #[cfg(target_os = "zkvm")] {
         mod zkvm;
         pub use zkvm::fill_bytes;
+    } else if #[cfg(all(target_os = "popcorn", target_env = "native"))] {
+        mod popcorn;
+        pub use popcorn::{fill_bytes, hashmap_random_keys};
     } else if #[cfg(any(
         all(target_family = "wasm", target_os = "unknown"),
         target_os = "xous",
@@ -91,6 +94,7 @@ cfg_if::cfg_if! {
     target_os = "android",
     all(target_family = "wasm", target_os = "unknown"),
     target_os = "xous",
+    all(target_os = "popcorn", target_env = "native")
 )))]
 pub fn hashmap_random_keys() -> (u64, u64) {
     let mut buf = [0; 16];

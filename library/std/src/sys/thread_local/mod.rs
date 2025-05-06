@@ -29,6 +29,7 @@ cfg_if::cfg_if! {
         target_os = "uefi",
         target_os = "zkvm",
         target_os = "trusty",
+        target_os = "popcorn", // FIXME(popcorn)
     ))] {
         mod no_threads;
         pub use no_threads::{EagerStorage, LazyStorage, thread_local_inner};
@@ -51,7 +52,7 @@ cfg_if::cfg_if! {
 /// destructor for each variable. On these platforms, we keep track of the
 /// destructors ourselves and register (through the [`guard`] module) only a
 /// single callback that runs all of the destructors in the list.
-#[cfg(all(target_thread_local, not(all(target_family = "wasm", not(target_feature = "atomics")))))]
+#[cfg(all(target_thread_local, not(any(target_os = "popcorn", all(target_family = "wasm", not(target_feature = "atomics"))))))]
 pub(crate) mod destructors {
     cfg_if::cfg_if! {
         if #[cfg(any(
@@ -67,7 +68,7 @@ pub(crate) mod destructors {
             mod list;
             pub(super) use linux_like::register;
             pub(super) use list::run;
-        } else {
+        } else if #[cfg(not(target_os = "popcorn"))] {
             mod list;
             pub(super) use list::register;
             pub(crate) use list::run;
@@ -93,6 +94,7 @@ pub(crate) mod guard {
             target_os = "uefi",
             target_os = "zkvm",
             target_os = "trusty",
+            target_os = "popcorn", // FIXME(popcorn)
         ))] {
             pub(crate) fn enable() {
                 // FIXME: Right now there is no concept of "thread exit" on

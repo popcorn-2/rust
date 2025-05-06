@@ -91,5 +91,7 @@ cfg_if::cfg_if! {
         mod xous;
     } else if #[cfg(target_os = "zkvm")] {
         mod zkvm;
+    } else if #[cfg(all(target_os = "popcorn", target_env = "native"))] {
+        mod popcorn;
     }
 }

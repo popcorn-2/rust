@@ -81,7 +81,7 @@ pub mod darwin;
         all(target_vendor = "fortanix", target_env = "sgx")
     )
 )))]
-#[cfg(all(not(target_os = "hermit"), any(unix, doc)))]
+#[cfg(all(not(target_os = "hermit"), not(all(target_os = "popcorn", target_env = "native")), any(unix, doc)))]
 pub mod unix;
 
 // linux
@@ -163,6 +163,8 @@ pub mod nto;
 pub mod nuttx;
 #[cfg(target_os = "openbsd")]
 pub mod openbsd;
+#[cfg(target_os = "popcorn")]
+pub mod popcorn;
 #[cfg(target_os = "redox")]
 pub mod redox;
 #[cfg(target_os = "rtems")]

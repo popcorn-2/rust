@@ -8,6 +8,9 @@ cfg_if::cfg_if! {
     } else if #[cfg(target_os = "uefi")] {
         mod uefi;
         use uefi as imp;
+    } else if #[cfg(all(target_os = "popcorn", target_env = "native"))] {
+        mod popcorn;
+        use popcorn as imp;
     } else {
         mod unsupported;
         use unsupported as imp;

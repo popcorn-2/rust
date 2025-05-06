@@ -25,7 +25,7 @@
 pub mod common;
 
 cfg_if::cfg_if! {
-    if #[cfg(unix)] {
+    if #[cfg(all(not(all(target_os = "popcorn", target_env = "native")), unix))] {
         mod unix;
         pub use self::unix::*;
     } else if #[cfg(windows)] {
@@ -64,6 +64,9 @@ cfg_if::cfg_if! {
     } else if #[cfg(target_os = "zkvm")] {
         mod zkvm;
         pub use self::zkvm::*;
+    } else if #[cfg(all(target_os = "popcorn", target_env = "native"))] {
+        mod popcorn;
+        pub use self::popcorn::*;
     } else {
         mod unsupported;
         pub use self::unsupported::*;
@@ -79,5 +82,5 @@ cfg_if::cfg_if! {
     }
 }
 
-#[cfg(not(target_os = "uefi"))]
+#[cfg(not(any(target_os = "uefi", target_os = "popcorn")))]
 pub type RawOsError = i32;

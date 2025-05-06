@@ -10,5 +10,5 @@ getopts = { version = "0.2.21", features = ['rustc-dep-of-std'] }
 std = { path = "../std", public = true }
 core = { path = "../core", public = true }
 
-[target.'cfg(not(all(windows, target_env = "msvc")))'.dependencies]
+[target.'cfg(not(any(all(target_os = "popcorn", target_env = "native"), all(windows, target_env = "msvc"))))'.dependencies]
 libc = { version = "0.2.150", default-features = false }

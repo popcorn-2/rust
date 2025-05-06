@@ -2,7 +2,7 @@
 
 mod io_slice {
     cfg_if::cfg_if! {
-        if #[cfg(any(target_family = "unix", target_os = "hermit", target_os = "solid_asp3", target_os = "trusty"))] {
+        if #[cfg(all(not(all(target_os = "popcorn", target_env = "native")), any(target_family = "unix", target_os = "hermit", target_os = "solid_asp3", target_os = "trusty")))] {
             mod iovec;
             pub use iovec::*;
         } else if #[cfg(target_os = "windows")] {
@@ -11,6 +11,9 @@ mod io_slice {
         } else if #[cfg(target_os = "wasi")] {
             mod wasi;
             pub use wasi::*;
+        } else if #[cfg(all(target_os = "popcorn", target_env = "native"))] {
+            mod popcorn;
+            pub use popcorn::*;
         } else {
             mod unsupported;
             pub use unsupported::*;
@@ -20,7 +23,7 @@ mod io_slice {
 
 mod is_terminal {
     cfg_if::cfg_if! {
-        if #[cfg(any(target_family = "unix", target_os = "wasi"))] {
+        if #[cfg(all(not(all(target_os = "popcorn", target_env = "native")), any(target_family = "unix", target_os = "wasi")))] {
             mod isatty;
             pub use isatty::*;
         } else if #[cfg(target_os = "windows")] {
@@ -29,6 +32,9 @@ mod is_terminal {
         } else if #[cfg(target_os = "hermit")] {
             mod hermit;
             pub use hermit::*;
+        } else if #[cfg(all(target_os = "popcorn", target_env = "native"))] {
+            mod popcorn;
+            pub use popcorn::*;
         } else {
             mod unsupported;
             pub use unsupported::*;
