@@ -250,6 +250,19 @@ pub mod proc {
                 }
             }
 
+			fn add_env_var(&self, value: &OsStr) -> () {
+                unsafe {
+                    syscall!(3u128<<96 | UID, self.as_raw_handle().0, value.as_encoded_bytes().as_ptr(), value.as_encoded_bytes().len() =>
+                        Ok(_res) => {
+                            return Ok(());
+                        }
+                        Err(res) => {
+                            return Err(crate::io::Error::from_raw_os_error(res as isize));
+                        }
+                    );
+                }
+            }
+
 			/*fn set_entry(&self, entry: *const u8) -> () {
                 unsafe {
                     syscall!(4u128<<96 | UID, self.as_raw_handle().0, entry =>
