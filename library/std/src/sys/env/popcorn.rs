@@ -1,34 +1,25 @@
 use crate::ffi::{OsStr, OsString};
 use crate::{fmt, io};
-
-pub struct Env(!);
-
-impl Env {
-    // FIXME(https://github.com/rust-lang/rust/issues/114583): Remove this when <OsStr as Debug>::fmt matches <str as Debug>::fmt.
-    pub fn str_debug(&self) -> impl fmt::Debug + '_ {
-        self.0
-    }
-}
-
-impl fmt::Debug for Env {
-    fn fmt(&self, _: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0
-    }
-}
-
-impl Iterator for Env {
-    type Item = (OsString, OsString);
-    fn next(&mut self) -> Option<(OsString, OsString)> {
-        self.0
-    }
-}
+pub use super::common::Env;
+use crate::os::popcorn::ffi::OsStrExt;
 
 pub fn env() -> Env {
-    panic!("not supported on this platform")
+    let strs = crate::sys::get_env();
+    let mut vec = vec![];
+
+    for s in strs {
+        let s = <OsStr as OsStrExt>::as_str(s);
+	    if let Some((key, val)) = s.split_once("=") {
+		    vec.push((OsStr::from_str(key).to_owned(), OsStr::from_str(val).to_owned()));
+	    }
+    }
+
+    Env::new(vec)
 }
 
-pub fn getenv(_: &OsStr) -> Option<OsString> {
-    None
+pub fn getenv(find_key: &OsStr) -> Option<OsString> {
+    // fixme: not linear search
+    env().find_map(|(key, val)| (find_key == key).then(|| val.clone()))
 }
 
 pub unsafe fn setenv(_: &OsStr, _: &OsStr) -> io::Result<()> {

@@ -11,6 +11,7 @@
     target_os = "uefi",
     target_os = "wasi",
     target_os = "xous",
+    target_os = "popcorn",
 ))]
 mod common;
 

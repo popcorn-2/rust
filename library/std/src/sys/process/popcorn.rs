@@ -1,7 +1,7 @@
 pub use crate::ffi::OsString as EnvKey;
 use crate::ffi::{OsStr, OsString};
 use crate::num::NonZero;
-use crate::os::popcorn::ffi::OsStrExt;
+use crate::os::popcorn::ffi::{OsStrExt, OsStringExt};
 use crate::path::Path;
 use crate::sys::fs::File;
 use crate::sys::pipe::Pipe;
@@ -191,6 +191,13 @@ impl Command {
 			let parent_handle = parent_handle.try_clone()?;
             handle.add_handle(id.as_os_str(), parent_handle.as_raw_handle().0)?;
 			core::mem::forget(parent_handle);
+        }
+
+        for (key, val) in self.env.capture() {
+            let mut buf = <OsString as OsStringExt>::into_string(key);
+            buf.push('=');
+            buf.push_str(&<OsString as OsStringExt>::into_string(val));
+            handle.add_env_var(&<OsString as OsStringExt>::from_string(buf));
         }
 
 		let handle = handle.spawn()?;

@@ -48,25 +48,40 @@ pub fn args() -> Vec<OsString> {
     vec
 }
 
-pub fn handles() -> Vec<(OsString, isize)> {
+pub fn get_env() -> Vec<&'static OsStr> {
+    let mut vec = vec![];
+
+    let mut ptr = ENVP.load(Ordering::Relaxed);
+    loop {
+        let env_ptr = unsafe { ptr.read() };
+        if env_ptr.is_null() { break; }
+
+        // SAFETY: Just checked that the pointer is not NULL, and on Popcorn,
+        // environment variables are guarunteed to be valid UTF-8
+        let env_var = unsafe { CStr::from_ptr(env_ptr.cast()) };
+        let env_var = <OsStr as OsStrExt>::from_str(unsafe { str::from_utf8_unchecked(env_var.to_bytes()) });
+
+        vec.push(env_var);
+        unsafe { ptr = ptr.offset(1) };
+    }
+
+    vec
+}
+
+pub fn handles() -> Vec<(&'static OsStr, isize)> {
     let mut vec = vec![];
 
     let mut ptr = HANDLEP.load(Ordering::Relaxed);
     loop {
-		println!("[rust-std] handle ptr {ptr:#p}");
-
         let handle_name = unsafe { ptr.read() };
         if handle_name.is_null() { break; }
 
         // SAFETY: Just checked that the pointer is not NULL, and on Popcorn,
         // handle names are guarunteed to be valid UTF-8
         let handle_name = unsafe { CStr::from_ptr(handle_name.cast()) };
-        let handle_name = <OsStr as OsStrExt>::from_str(unsafe { str::from_utf8_unchecked(handle_name.to_bytes()) }).to_os_string();
-
-		println!("[rust-std] found handle {handle_name:?}");
+        let handle_name = <OsStr as OsStrExt>::from_str(unsafe { str::from_utf8_unchecked(handle_name.to_bytes()) });
 
         let handle_id = unsafe { ptr.offset(1).read() }.addr() as isize;
-		println!("[rust-std] with id {handle_id}");
 
         vec.push((handle_name, handle_id));
         unsafe { ptr = ptr.offset(2) };
