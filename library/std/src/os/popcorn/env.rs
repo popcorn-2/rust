@@ -1,7 +1,9 @@
 #![stable(feature = "popcorn_std", since = "1.88.0")]
 
-use crate::{ffi::OsStr, os::popcorn::{handle::{FromRawHandle, RawHandle}, proto::ProtocolTuple}};
+use crate::{ffi::{OsStr, OsString}, os::popcorn::{handle::{FromRawHandle, RawHandle}, proto::ProtocolTuple}};
 use super::handle::BorrowedHandle;
+use crate::sync::OnceLock;
+use crate::collections::HashMap;
 
 #[stable(feature = "popcorn_std", since = "1.88.0")]
 pub fn get_handle<I: ProtocolTuple>(id: impl AsRef<OsStr>) -> Option<BorrowedHandle<'static, I>> {
@@ -10,13 +12,13 @@ pub fn get_handle<I: ProtocolTuple>(id: impl AsRef<OsStr>) -> Option<BorrowedHan
 
 #[stable(feature = "popcorn_std", since = "1.88.0")]
 pub fn get_handle_untyped(id: impl AsRef<OsStr>) -> Option<BorrowedHandle<'static>> {
-    /*static HANDLE_MAP: OnceLock<HashMap<OsString, isize>> = OnceLock::new();
+    static HANDLE_MAP: OnceLock<HashMap<&'static OsStr, isize>> = OnceLock::new();
     
     HANDLE_MAP.get_or_init(|| HashMap::from_iter(crate::sys::handles()))
-        .get(id.as_ref())*/
-    crate::sys::handles().into_iter()
-        .find(|(s, _)| s == id.as_ref())
-        .map(|(_, handle)| RawHandle(handle))
+        .get(id.as_ref())
+    /*crate::sys::handles().into_iter()
+        .find(|(s, _)| s == id.as_ref())*/
+        .map(|handle| RawHandle(*handle))
         .map(|handle| unsafe { BorrowedHandle::from_raw_handle(handle) })
 }
 
