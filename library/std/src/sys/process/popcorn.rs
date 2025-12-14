@@ -10,7 +10,7 @@ use super::env::{CommandEnv, CommandEnvs};
 use crate::{fmt, io};
 use alloc_crate::collections::BTreeMap;
 use crate::os::popcorn::handle::{AsRawHandle, OwnedHandle, FromRawHandle, BorrowedHandle};
-use crate::os::popcorn::proto::proc::{Thread, Builder, BuilderTr};
+use crate::os::popcorn::proto::proc::{Thread, ThreadTr, Builder, BuilderTr};
 use core::mem::ManuallyDrop;
 use crate::process::StdioPipes;
 
@@ -65,7 +65,7 @@ impl Command {
     pub fn new(program: &OsStr) -> Command {
         Command {
             program: program.to_owned(),
-            args: vec![program.to_owned()],
+            args: vec![],
             env: Default::default(),
             cwd: None,
             handles: BTreeMap::new(),
@@ -200,6 +200,11 @@ impl Command {
             handle.add_env_var(&<OsString as OsStringExt>::from_string(buf));
         }
 
+        handle.add_arg(&self.program);
+        for arg in self.args.iter() {
+            handle.add_arg(&arg);
+        }
+
 		let handle = handle.spawn()?;
         let res = Ok((
             Process { handle },
@@ -310,7 +315,7 @@ impl fmt::Debug for Command {
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug, Default)]
 #[non_exhaustive]
-pub struct ExitStatus();
+pub struct ExitStatus(isize);
 
 impl ExitStatus {
     pub fn exit_ok(&self) -> Result<(), ExitStatusError> {
@@ -318,58 +323,58 @@ impl ExitStatus {
     }
 
     pub fn code(&self) -> Option<i32> {
-        Some(0)
+        Some(self.0 as i32)
     }
 }
 
 impl fmt::Display for ExitStatus {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "<dummy exit status>")
+        write!(f, "{}", self.0)
     }
 }
 
-pub struct ExitStatusError(!);
+pub struct ExitStatusError(NonZero<isize>);
 
 impl Clone for ExitStatusError {
     fn clone(&self) -> ExitStatusError {
-        self.0
+        Self(self.0)
     }
 }
 
 impl Copy for ExitStatusError {}
 
 impl PartialEq for ExitStatusError {
-    fn eq(&self, _other: &ExitStatusError) -> bool {
-        self.0
+    fn eq(&self, other: &ExitStatusError) -> bool {
+        self.0 == other.0
     }
 }
 
 impl Eq for ExitStatusError {}
 
 impl fmt::Debug for ExitStatusError {
-    fn fmt(&self, _f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0.get())
     }
 }
 
 impl Into<ExitStatus> for ExitStatusError {
     fn into(self) -> ExitStatus {
-        self.0
+        todo!()
     }
 }
 
 impl ExitStatusError {
     pub fn code(self) -> Option<NonZero<i32>> {
-        self.0
+        todo!()
     }
 }
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub struct ExitCode(u8);
+pub struct ExitCode(isize);
 
 impl ExitCode {
     pub const SUCCESS: ExitCode = ExitCode(0);
-    pub const FAILURE: ExitCode = ExitCode(1);
+    pub const FAILURE: ExitCode = ExitCode(-1);
 
     pub fn as_i32(&self) -> i32 {
         self.0 as i32
@@ -378,7 +383,7 @@ impl ExitCode {
 
 impl From<u8> for ExitCode {
     fn from(code: u8) -> Self {
-        Self(code)
+        Self(code as isize)
     }
 }
 
@@ -396,7 +401,8 @@ impl Process {
     }
 
     pub fn wait(&mut self) -> io::Result<ExitStatus> {
-        unsupported()
+        let exit_code = self.handle.join()?;
+        Ok(ExitStatus(exit_code))
     }
 
     pub fn try_wait(&mut self) -> io::Result<Option<ExitStatus>> {

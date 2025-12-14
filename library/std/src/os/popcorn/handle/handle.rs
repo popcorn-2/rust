@@ -349,6 +349,20 @@ impl AsHandle<super::super::proto::fs::File> for File {
 }
 
 #[stable(feature = "io_safety", since = "1.63.0")]
+impl From<OwnedHandle<super::super::proto::fs::File>> for File {
+    fn from(owned: OwnedHandle<super::super::proto::fs::File>) -> Self {
+        Self::from_inner(FromInner::from_inner(owned))
+    }
+}
+
+#[stable(feature = "io_safety", since = "1.63.0")]
+impl<T> From<OwnedHandle<T>> for crate::process::Stdio {
+    fn from(owned: OwnedHandle<T>) -> Self {
+        Self::from_inner(crate::sys::process::Stdio::FromOwned(owned.type_erase()))
+    }
+}
+
+#[stable(feature = "io_safety", since = "1.63.0")]
 impl AsHandle<Read> for Stdin {
     fn as_handle(&self) -> BorrowedHandle<'_, Read> {
         crate::os::popcorn::env::get_handle("io.stdin").unwrap()

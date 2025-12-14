@@ -194,6 +194,10 @@ pub enum Prefix<'a> {
     /// Prefix `C:` for the given disk drive.
     #[stable(feature = "rust1", since = "1.0.0")]
     Disk(#[stable(feature = "rust1", since = "1.0.0")] u8),
+
+    /// Prefix `fs:` for the given server on Popcorn.
+    #[stable(feature = "rust1", since = "1.0.0")]
+    Server(#[stable(feature = "rust1", since = "1.0.0")] &'a OsStr),
 }
 
 impl<'a> Prefix<'a> {
@@ -212,6 +216,7 @@ impl<'a> Prefix<'a> {
             UNC(x, y) => 2 + os_str_len(x) + if os_str_len(y) > 0 { 1 + os_str_len(y) } else { 0 },
             DeviceNS(x) => 4 + os_str_len(x),
             Disk(_) => 2,
+            Server(x) => 1 + os_str_len(x),
         }
     }
 
@@ -229,6 +234,7 @@ impl<'a> Prefix<'a> {
     /// assert!(!DeviceNS(OsStr::new("BrainInterface")).is_verbatim());
     /// assert!(!UNC(OsStr::new("server"), OsStr::new("share")).is_verbatim());
     /// assert!(!Disk(b'C').is_verbatim());
+    /// assert!(!Server(OsStr::new("fs")).is_verbatim());
     /// ```
     #[inline]
     #[must_use]
@@ -241,6 +247,11 @@ impl<'a> Prefix<'a> {
     #[inline]
     fn is_drive(&self) -> bool {
         matches!(*self, Prefix::Disk(_))
+    }
+
+    #[inline]
+    fn is_server(&self) -> bool {
+        matches!(*self, Prefix::Server(_))
     }
 
     #[inline]
@@ -1348,7 +1359,7 @@ impl PathBuf {
 
         if comps.prefix_len() > 0
             && comps.prefix_len() == comps.path.len()
-            && comps.prefix.unwrap().is_drive()
+            && (comps.prefix.unwrap().is_drive() || comps.prefix.unwrap().is_server())
         {
             need_sep = false
         }

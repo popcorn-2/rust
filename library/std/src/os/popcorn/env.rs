@@ -16,9 +16,25 @@ pub fn get_handle_untyped(id: impl AsRef<OsStr>) -> Option<BorrowedHandle<'stati
     
     HANDLE_MAP.get_or_init(|| HashMap::from_iter(crate::sys::handles()))
         .get(id.as_ref())
-    /*crate::sys::handles().into_iter()
-        .find(|(s, _)| s == id.as_ref())*/
         .map(|handle| RawHandle(*handle))
         .map(|handle| unsafe { BorrowedHandle::from_raw_handle(handle) })
+}
+
+unsafe extern "C" {
+    safe fn thrd_current() -> *const LibcTcb;
+}
+
+#[repr(C)]
+struct LibcTcb {
+	_self_pointer: *const LibcTcb,
+	_dtv_size: usize,
+	_dtv_pointers: *const *const core::ffi::c_void,
+	tid: core::ffi::c_int,
+}
+
+#[stable(feature = "popcorn_std", since = "1.88.0")]
+pub fn current_thread_handle() -> BorrowedHandle<'static, crate::os::popcorn::proto::proc::Thread> {
+    let id = unsafe { (*thrd_current()).tid } as isize;
+    unsafe { BorrowedHandle::from_raw_handle(RawHandle(id)) }
 }
 

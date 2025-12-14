@@ -40,6 +40,10 @@ cfg_select! {
         mod windows_prefix;
         pub use cygwin::*;
     }
+    target_os = "popcorn" => {
+        mod popcorn;
+        pub use popcorn::*;
+    }
     _ => {
         mod unix;
         pub use unix::*;

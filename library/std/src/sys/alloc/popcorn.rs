@@ -4,7 +4,9 @@ use core::ffi::c_void;
 use crate::ptr;
 
 // todo(popcorn): remove dependency on libc - we don't need to worry about cross-lang malloc/free cause that's UB anyway
-#[link(name = "c")]
+
+#[cfg_attr(target_feature = "crt-static", link(name = "libc.a", modifiers="+verbatim"))]
+#[cfg_attr(not(target_feature = "crt-static"), link(name = "libc.so", modifiers="+verbatim"))]
 unsafe extern "C" {
     fn aligned_alloc(__alignment: usize, __size: usize) -> *mut c_void;
     fn calloc(__count: usize, __size: usize) -> *mut c_void;
