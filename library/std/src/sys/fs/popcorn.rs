@@ -21,6 +21,12 @@ pub struct File {
     handle: OwnedHandle<AbiFile>,
 }
 
+impl FromInner<OwnedHandle<AbiFile>> for File {
+    fn from_inner(handle: OwnedHandle<AbiFile>) -> Self {
+        Self { handle }
+    }
+}
+
 impl AsHandle<AbiFile> for File {
     fn as_handle(&self) -> BorrowedHandle<'_, AbiFile> {
         self.handle.as_handle()

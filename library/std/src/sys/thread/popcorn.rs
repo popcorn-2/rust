@@ -76,12 +76,12 @@ struct Tcb {
 	guard_size: usize,
 }
 
-#[link(name = "rt")]
+#[cfg_attr(target_feature = "crt-static", link(name = "librt.a", modifiers="+verbatim"))]
+#[cfg_attr(not(target_feature = "crt-static"), link(name = "librt.so", modifiers="+verbatim"))]
+#[cfg_attr(not(target_feature = "crt-static"), link(name = "ld.so", modifiers="+verbatim"))]
 unsafe extern "C" {
     safe fn __rtld_allocateTcb() -> *mut Tcb;
     safe fn __mlibc_start_thread() -> !;
-    #[link_name = "_ZN5mlibc8this_tidEv"]
-    safe fn this_tid() -> core::ffi::c_uint;
 }
 
 pub const DEFAULT_MIN_STACK_SIZE: usize = 32 * 1024;
@@ -91,8 +91,7 @@ impl Thread {
     pub unsafe fn new(stack_size: usize, init: Box<ThreadInit>) -> io::Result<Thread> {
 		let data = Box::into_raw(init);
 
-		let process_handle = unsafe { BorrowedHandle::<'static, proto::proc::Thread>::from_raw_handle(RawHandle(this_tid() as isize)) };
-
+		let process_handle = crate::os::popcorn::env::current_thread_handle();
         let tcb = __rtld_allocateTcb();
 
         let stack_top = unsafe {
@@ -146,15 +145,6 @@ impl Thread {
 }
 
 pub fn yield_now() {
-    let _ = unsafe { BorrowedHandle::<'static, proto::proc::Thread>::from_raw_handle(RawHandle(this_tid() as isize)) }
-        .yield_now();
+    let _ = crate::os::popcorn::env::current_thread_handle()
+            .yield_now();
 }
-
-/*impl AsHandle for Thread {
-    fn as_handle(&self) -> BorrowedHandle<'_> {
-        BorrowedHandle {
-            handle: unsafe { *self.tcb }.tid as _,
-            _phantom: PhantomData,
-        }
-    }
-}*/

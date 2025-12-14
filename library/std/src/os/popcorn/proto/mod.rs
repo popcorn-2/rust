@@ -263,9 +263,9 @@ pub mod proc {
                 }
             }
 
-			/*fn set_entry(&self, entry: *const u8) -> () {
+			fn add_arg(&self, value: &OsStr) -> () {
                 unsafe {
-                    syscall!(4u128<<96 | UID, self.as_raw_handle().0, entry =>
+                    syscall!(4u128<<96 | UID, self.as_raw_handle().0, value.as_encoded_bytes().as_ptr(), value.as_encoded_bytes().len() =>
                         Ok(_res) => {
                             return Ok(());
                         }
@@ -274,7 +274,7 @@ pub mod proc {
                         }
                     );
                 }
-            }*/
+            }
         }
 
         pub protocol Thread = 0xA {
@@ -324,6 +324,32 @@ pub mod proc {
                     syscall!(6u128<<96 | UID, self.as_raw_handle().0, physical_addr, size =>
                         Ok(res) => {
                             return Ok(core::ptr::with_exposed_provenance_mut(res as usize));
+                        }
+                        Err(res) => {
+                            return Err(crate::io::Error::from_raw_os_error(res as isize));
+                        }
+                    );
+                }
+            }
+
+			fn exit(&self, code: isize) -> () {
+                unsafe {
+                    syscall!(7u128<<96 | UID, self.as_raw_handle().0, code =>
+                        Ok(res) => {
+                            return Ok(());
+                        }
+                        Err(res) => {
+                            return Err(crate::io::Error::from_raw_os_error(res as isize));
+                        }
+                    );
+                }
+            }
+
+			fn join(&self) -> isize {
+                unsafe {
+                    syscall!(8u128<<96 | UID, self.as_raw_handle().0 =>
+                        Ok(res) => {
+                            return Ok(res as isize);
                         }
                         Err(res) => {
                             return Err(crate::io::Error::from_raw_os_error(res as isize));
