@@ -197,12 +197,12 @@ impl Command {
             let mut buf = <OsString as OsStringExt>::into_string(key);
             buf.push('=');
             buf.push_str(&<OsString as OsStringExt>::into_string(val));
-            handle.add_env_var(&<OsString as OsStringExt>::from_string(buf));
+            handle.add_env_var(&<OsString as OsStringExt>::from_string(buf))?;
         }
 
-        handle.add_arg(&self.program);
+        handle.add_arg(&self.program)?;
         for arg in self.args.iter() {
-            handle.add_arg(&arg);
+            handle.add_arg(&arg)?;
         }
 
 		let handle = handle.spawn()?;
