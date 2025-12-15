@@ -1,5 +1,5 @@
 use crate::ffi::{OsStr, OsString};
-use crate::{fmt, io};
+use crate::io;
 pub use super::common::Env;
 use crate::os::popcorn::ffi::OsStrExt;
 

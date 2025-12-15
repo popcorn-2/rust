@@ -1,6 +1,6 @@
 #![stable(feature = "popcorn_std", since = "1.88.0")]
 
-use crate::{ffi::{OsStr, OsString}, os::popcorn::{handle::{FromRawHandle, RawHandle}, proto::ProtocolTuple}};
+use crate::{ffi::OsStr, os::popcorn::{handle::{FromRawHandle, RawHandle}, proto::ProtocolTuple}};
 use super::handle::BorrowedHandle;
 use crate::sync::OnceLock;
 use crate::collections::HashMap;

@@ -1,6 +1,5 @@
 use crate::ffi::OsStr;
 use crate::io;
-use crate::os::popcorn::handle::{BorrowedHandle, RawHandle, FromRawHandle};
 use core::ptr::addr_of_mut;
 use core::sync::atomic::{AtomicI32, Ordering};
 use core::mem::ManuallyDrop;

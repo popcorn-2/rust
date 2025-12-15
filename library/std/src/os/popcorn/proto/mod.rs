@@ -335,7 +335,7 @@ pub mod proc {
 			fn exit(&self, code: isize) -> () {
                 unsafe {
                     syscall!(7u128<<96 | UID, self.as_raw_handle().0, code =>
-                        Ok(res) => {
+                        Ok(_res) => {
                             return Ok(());
                         }
                         Err(res) => {
