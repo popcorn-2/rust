@@ -94,7 +94,8 @@ impl Thread {
         let tcb = __rtld_allocateTcb();
 
         let stack_top = unsafe {
-            process_handle.unstable_anon_alloc(stack_size)?
+            let stack = OwnedHandle::<Pager>::new(format!("mem:{stack_size}"), Pager {})?;
+            process_handle.map_vmo(stack.as_raw_handle(), core::ptr::null_mut(), stack_size, 0)?
             	.byte_add(stack_size)
 				.cast::<usize>()
         };
