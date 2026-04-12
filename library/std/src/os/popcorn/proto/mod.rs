@@ -280,19 +280,6 @@ pub mod proc {
         pub protocol Thread = 0xA {
             ctor => {}
 
-			fn unstable_anon_alloc(&self, size: usize) -> *mut u8 {
-                unsafe {
-                    syscall!(1u128<<96 | UID, self.as_raw_handle().0, size =>
-                        Ok(res) => {
-                            return Ok(core::ptr::with_exposed_provenance_mut(res as usize));
-                        }
-                        Err(res) => {
-                            return Err(crate::io::Error::from_raw_os_error(res as isize));
-                        }
-                    );
-                }
-            }
-
 			fn spawn_thread(&self, name: &OsStr, stack_top: *mut u8, entry: extern "C" fn() -> !) -> OwnedHandle<Thread> {
                 unsafe {
                     syscall!(4u128<<96 | UID, self.as_raw_handle().0, name.as_encoded_bytes().as_ptr(), name.as_encoded_bytes().len(), stack_top, entry =>
@@ -357,6 +344,27 @@ pub mod proc {
                     );
                 }
             }
+
+			fn map_vmo(&self, vmo: RawHandle, addr: *mut u8, length: usize, offset: usize) -> *mut u8 {
+                unsafe {
+                    syscall!(9u128<<96 | UID, self.as_raw_handle().0, vmo.0, addr, length, offset =>
+                        Ok(res) => {
+                            return Ok(core::ptr::with_exposed_provenance_mut(res as usize));
+                        }
+                        Err(res) => {
+                            return Err(crate::io::Error::from_raw_os_error(res as isize));
+                        }
+                    );
+                }
+            }
+        }
+    }
+}
+
+pub mod mem {
+    protocol! {
+        pub protocol Pager = 0x6 {
+            ctor => {}
         }
     }
 }
