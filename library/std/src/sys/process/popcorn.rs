@@ -319,7 +319,11 @@ pub struct ExitStatus(isize);
 
 impl ExitStatus {
     pub fn exit_ok(&self) -> Result<(), ExitStatusError> {
-        Ok(())
+        if self.0 < 0 {
+            Err(ExitStatusError(unsafe { NonZero::new_unchecked(self.0) }))
+        } else {
+            Ok(())
+        }
     }
 
     pub fn code(&self) -> Option<i32> {
@@ -359,7 +363,7 @@ impl fmt::Debug for ExitStatusError {
 
 impl Into<ExitStatus> for ExitStatusError {
     fn into(self) -> ExitStatus {
-        todo!()
+        ExitStatus(self.0.get())
     }
 }
 
