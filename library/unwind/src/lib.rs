@@ -179,6 +179,10 @@ unsafe extern "C" {}
 #[link(name = "c++abi")]
 unsafe extern "C" {}
 
+#[cfg(target_os = "popcorn")]
+#[link(name = "unwind")]
+unsafe extern "C" {}
+
 #[cfg(any(target_os = "solaris", target_os = "illumos"))]
 #[link(name = "gcc_s")]
 unsafe extern "C" {}
