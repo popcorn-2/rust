@@ -4,7 +4,7 @@ pub(crate) fn target() -> Target {
     let mut base = base::popcorn::opts();
     base.cpu = "x86-64".into();
     base.plt_by_default = false;
-    base.features = "+cmpxchg16b,+sse,+sse2".into();
+    base.features = "+cx16,+sse,+sse2".into();
     base.max_atomic_width = Some(128);
     base.supported_sanitizers = SanitizerSet::KERNELADDRESS;
 
