@@ -218,10 +218,6 @@ impl Command {
     }
 }
 
-pub fn output(_command: &mut Command) -> io::Result<(ExitStatus, Vec<u8>, Vec<u8>)> {
-    unsupported()
-}
-
 impl From<Pipe> for Stdio {
     fn from(pipe: Pipe) -> Stdio {
         pipe.diverge()
