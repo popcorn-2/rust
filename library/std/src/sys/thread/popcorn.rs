@@ -95,9 +95,11 @@ impl Thread {
 
         let stack_top = unsafe {
             let stack = OwnedHandle::<Pager>::new(format!("mem:{stack_size}"), Pager {})?;
-            process_handle.map_vmo(stack.as_raw_handle(), core::ptr::null_mut(), stack_size, 0)?
+            let stack_top = process_handle.map_vmo(stack.as_raw_handle(), core::ptr::null_mut(), stack_size, 0)?
             	.byte_add(stack_size)
-				.cast::<usize>()
+				.cast::<usize>();
+            core::mem::forget(stack);
+            stack_top
         };
 
         extern "C" fn thread_start(data: *mut core::ffi::c_void) -> core::ffi::c_int {
