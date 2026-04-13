@@ -90,6 +90,7 @@ pub fn output(cmd: &mut Command) -> crate::io::Result<(ExitStatus, Vec<u8>, Vec<
         ))
     ),
     target_os = "windows",
-    target_os = "motor"
+    target_os = "motor",
+    target_os = "popcorn"
 )))]
 pub use imp::output;
