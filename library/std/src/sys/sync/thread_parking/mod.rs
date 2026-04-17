@@ -42,6 +42,11 @@ cfg_select! {
         mod pthread;
         pub use pthread::Parker;
     }
+    target_os = "popcorn" => {
+        // fixme(popcorn)
+        mod popcorn;
+        pub use popcorn::Parker;
+    }
     _ => {
         mod unsupported;
         pub use unsupported::Parker;
