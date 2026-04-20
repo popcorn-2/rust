@@ -84,8 +84,8 @@ protocol_tuple!(__PrivateTUV T U V);
 protocol_tuple!(__PrivateTUVW T U V W);
 protocol_tuple!(__PrivateTUVWX T U V W X);
 
-macro_rules! protocol {
-    () => {};
+pub macro protocol {
+    () => {},
     (pub protocol $name:ident = $uid:literal {
         ctor => {
             $($ctor_arg:ident : $ctor_ty:ty),* $(,)?
@@ -133,13 +133,11 @@ macro_rules! protocol {
         }*/
 
         $crate::os::popcorn::proto::protocol!($($rest)*);
-    };
+    }
 }
 
-pub(self) use protocol;
-
 pub mod fs {
-    protocol! {
+    super::protocol! {
         pub protocol File = 1 {
             ctor => {
                 create: usize,
@@ -154,7 +152,7 @@ pub mod io {
     use core::io::BorrowedCursor;
     use crate::os::popcorn::handle::AsRawHandle;
     
-    protocol! {
+    super::protocol! {
         pub protocol Read = 2 {
             ctor => {}
             fn read(&self, buf: BorrowedCursor<'_>) -> usize {
@@ -206,7 +204,7 @@ pub mod proc {
 	use crate::ffi::OsStr;
 	use crate::os::popcorn::handle::{OwnedHandle, RawHandle, AsRawHandle, FromRawHandle};
 
-    protocol! {
+    super::protocol! {
         pub protocol Builder = 9 {
             ctor => {}
 
@@ -362,7 +360,7 @@ pub mod proc {
 }
 
 pub mod mem {
-    protocol! {
+    super::protocol! {
         pub protocol Pager = 0x6 {
             ctor => {}
         }
