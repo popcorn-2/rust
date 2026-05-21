@@ -3,8 +3,10 @@
 //! # Examples
 //!
 //! ```
+//! #![feature(popcorn_std)]
+//! 
 //! use std::ffi::OsString;
-//! use std::os::unix::ffi::OsStringExt;
+//! use std::os::popcorn::ffi::OsStringExt;
 //!
 //! let string = "foo".to_string();
 //!
@@ -18,8 +20,10 @@
 //! ```
 //!
 //! ```
+//! #![feature(popcorn_std)]
+//! 
 //! use std::ffi::OsStr;
-//! use std::os::unix::ffi::OsStrExt;
+//! use std::os::popcorn::ffi::OsStrExt;
 //!
 //! let str = "foo";
 //!
@@ -34,9 +38,5 @@
 //!
 //! [`std::ffi`]: crate::ffi
 
-#![stable(feature = "popcorn_std", since = "1.88.0")]
-
 mod os_str;
-
-#[stable(feature = "popcorn_std", since = "1.88.0")]
 pub use self::os_str::{OsStrExt, OsStringExt};
