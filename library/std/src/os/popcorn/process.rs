@@ -1,9 +1,8 @@
 use core::mem::ManuallyDrop;
 use crate::ffi::OsString;
 use crate::process::Command;
-use super::handle::OwnedHandle;
 use crate::sys::AsInnerMut;
-use super::handle::{FromRawHandle, AsRawHandle};
+use super::io::{OwnedHandle, FromRawHandle, AsRawHandle};
 use crate::io::Error;
 
 pub trait CommandExt: crate::sealed::Sealed {
@@ -35,7 +34,7 @@ impl CommandExt for Command {
 pub enum Handle {
     Null,
     Inherit,
-    Handle(OwnedHandle<()>),
+    Handle(OwnedHandle),
 }
 
 pub fn inherit() -> Handle { Handle::Inherit }

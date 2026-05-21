@@ -3,8 +3,8 @@ use crate::io;
 use core::ptr::addr_of_mut;
 use core::sync::atomic::{AtomicI32, Ordering};
 use core::mem::ManuallyDrop;
-use crate::os::popcorn::proto::{proc::ThreadTr, mem::Pager};
-use crate::os::popcorn::handle::{AsRawHandle, OwnedHandle};
+use crate::os::popcorn::proto::{proc::Thread as _, /*mem::Pager*/};
+use crate::os::popcorn::io::{AsRawHandle, OwnedHandle, FromRawHandle};
 use crate::thread::ThreadInit;
 
 #[repr(transparent)]
@@ -87,6 +87,7 @@ pub const DEFAULT_MIN_STACK_SIZE: usize = 32 * 1024;
 
 impl Thread {
     // unsafe: see thread::Builder::spawn_unchecked for safety requirements
+    #[expect(unused)]
     pub unsafe fn new(stack_size: usize, init: Box<ThreadInit>) -> io::Result<Thread> {
 		let data = Box::into_raw(init);
 
@@ -94,10 +95,10 @@ impl Thread {
         let tcb = __rtld_allocateTcb();
 
         let stack_top = unsafe {
-            let stack = OwnedHandle::<Pager>::new(format!("mem:{stack_size}"), Pager {})?;
-            let stack_top = process_handle.map_vmo(stack.as_raw_handle(), core::ptr::null_mut(), stack_size, 0)?
+            let stack = OwnedHandle::<()>::from_raw_handle(todo!()); //::<&dyn Pager>::new(format!("mem:{stack_size}"), Pager {})?;
+            let stack_top: *mut usize = todo!()/*process_handle.map_vmo(stack.as_raw_handle(), core::ptr::null_mut(), stack_size, 0)?
             	.byte_add(stack_size)
-				.cast::<usize>();
+				.cast::<usize>()*/;
             core::mem::forget(stack);
             stack_top
         };

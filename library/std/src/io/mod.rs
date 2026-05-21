@@ -253,7 +253,7 @@
 //! someone else.
 //!
 //! The platform-specific parts of the Rust standard library expose types that reflect these
-//! concepts, see [`os::unix`] and [`os::windows`].
+//! concepts, see [`os::unix`], [`os::windows`] and [`os::popcorn`].
 //!
 //! To uphold I/O safety, it is crucial that no code acts on file descriptors it does not own or
 //! borrow, and no code closes file descriptors it does not own. In other words, a safe function
@@ -272,7 +272,7 @@
 //! same kernel object. However, when you create a new kernel object, you know that you are holding
 //! the only reference to it. Just be careful not to lend it to anyone, since they can obtain a
 //! clone and then you can no longer know what the reference count is! In that sense, [`OwnedFd`] is
-//! like `Arc` and [`BorrowedFd<'a>`] is like `&'a Arc` (and similar for the Windows types). In
+//! like `Arc` and [`BorrowedFd<'a>`] is like `&'a Arc` (and similar for the Windows and Popcorn types). In
 //! particular, given a `BorrowedFd<'a>`, you are not allowed to close the file descriptor -- just
 //! like how, given a `&'a Arc`, you are not allowed to decrement the reference count and
 //! potentially free the underlying object. There is no equivalent to `Box` for file descriptors in
@@ -288,6 +288,7 @@
 //! [`.unwrap()`]: crate::result::Result::unwrap
 //! [`os::unix`]: ../os/unix/io/index.html
 //! [`os::windows`]: ../os/windows/io/index.html
+//! [`os::popcorn`]: ../os/popcorn/io/index.html
 //! [`OwnedFd`]: ../os/fd/struct.OwnedFd.html
 //! [`BorrowedFd<'a>`]: ../os/fd/struct.BorrowedFd.html
 //! [`Arc`]: crate::sync::Arc

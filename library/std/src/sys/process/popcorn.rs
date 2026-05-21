@@ -6,11 +6,11 @@ use crate::path::Path;
 use crate::sys::fs::File;
 use crate::sys::pipe::Pipe;
 use crate::sys::unsupported;
-use super::env::{CommandEnv, CommandEnvs};
+use super::env::{CommandEnv, CommandEnvs, CommandResolvedEnvs};
 use crate::{fmt, io};
 use alloc_crate::collections::BTreeMap;
-use crate::os::popcorn::handle::{AsRawHandle, OwnedHandle, FromRawHandle, BorrowedHandle};
-use crate::os::popcorn::proto::proc::{Thread, ThreadTr, Builder, BuilderTr};
+use crate::os::popcorn::io::{AsRawHandle, OwnedHandle, FromRawHandle, BorrowedHandle};
+use crate::os::popcorn::proto::proc::{Thread, Builder};
 use core::mem::ManuallyDrop;
 use crate::process::StdioPipes;
 
@@ -25,7 +25,7 @@ pub struct Command {
 
     cwd: Option<OsString>,
 
-    handles: BTreeMap<OsString, OwnedHandle<()>>, // adding the handle into the new process is a destructive move, so we don't want to destroy them on our side
+    handles: BTreeMap<OsString, OwnedHandle>,
 
     pending_error: io::Result<()>,
 
@@ -39,8 +39,8 @@ pub enum Stdio {
     Inherit,
     Null,
     MakePipe,
-    FromClone(BorrowedHandle<'static, ()>),
-    FromOwned(OwnedHandle<()>),
+    FromClone(BorrowedHandle<'static>),
+    FromOwned(OwnedHandle),
 }
 
 impl Stdio {
@@ -162,6 +162,10 @@ impl Command {
         self.env.does_clear()
     }
 
+    pub fn get_resolved_envs(&self) -> CommandResolvedEnvs {
+        CommandResolvedEnvs::new(self.env.capture())
+    }
+
     pub fn get_current_dir(&self) -> Option<&Path> {
         self.cwd.as_ref().map(|cs| Path::new(cs))
     }
@@ -171,6 +175,7 @@ impl Command {
         default: Stdio,
         _needs_stdin: bool,
     ) -> io::Result<(Process, StdioPipes)> {
+        #![expect(unreachable_code, unused_variables)]
         if !self.handles.contains_key(OsStr::from_str("io.stdin")) && !self.is_stdin_null {
             self.stdin(default.clone_private()?);
         }
@@ -185,12 +190,11 @@ impl Command {
 
         if let Err(e) = core::mem::replace(&mut self.pending_error, Ok(())) { return Err(e); }
 
-        let handle = OwnedHandle::<Builder>::new(self.program.as_str(), Builder {})?;
+        let handle: OwnedHandle<&'static dyn Builder> = todo!("create new 'core.proc.Builder` object");//new(self.program.as_str(), Builder {})?;
 
         for (id, parent_handle) in self.handles.iter() {
 			let parent_handle = parent_handle.try_clone()?;
-            handle.add_handle(id.as_os_str(), parent_handle.as_raw_handle().0)?;
-			core::mem::forget(parent_handle);
+            handle.add_handle(id.as_os_str(), parent_handle)?;
         }
 
         for (key, val) in self.env.capture() {
@@ -205,7 +209,7 @@ impl Command {
             handle.add_arg(&arg)?;
         }
 
-		let handle = handle.spawn()?;
+		let handle = todo!("implement `core.proc.Builder::~spawn()`"); //handle.spawn()?;
         let res = Ok((
             Process { handle },
             StdioPipes {
@@ -388,7 +392,7 @@ impl From<u8> for ExitCode {
 }
 
 pub struct Process {
-    handle: OwnedHandle<Thread>,
+    handle: OwnedHandle<&'static dyn Thread>,
 }
 
 impl Process {

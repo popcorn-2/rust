@@ -1,7 +1,8 @@
 #![unstable(feature = "popcorn_std", issue = "none")]
 
-use crate::{ffi::OsStr, os::popcorn::{handle::{FromRawHandle, RawHandle}, proto::ProtocolTuple}};
-use super::handle::BorrowedHandle;
+use crate::ffi::OsStr;
+use super::io::{BorrowedHandle, RawHandle};
+use super::proto::ProtocolTuple;
 use crate::sync::OnceLock;
 use crate::collections::HashMap;
 
@@ -15,7 +16,7 @@ pub fn get_handle_untyped(id: impl AsRef<OsStr>) -> Option<BorrowedHandle<'stati
     HANDLE_MAP.get_or_init(|| HashMap::from_iter(crate::sys::handles()))
         .get(id.as_ref())
         .map(|handle| RawHandle(*handle))
-        .map(|handle| unsafe { BorrowedHandle::from_raw_handle(handle) })
+        .map(|handle| unsafe { BorrowedHandle::borrow_raw(handle) })
 }
 
 unsafe extern "C" {
@@ -30,8 +31,8 @@ struct LibcTcb {
 	tid: core::ffi::c_int,
 }
 
-pub fn current_thread_handle() -> BorrowedHandle<'static, crate::os::popcorn::proto::proc::Thread> {
+pub fn current_thread_handle() -> BorrowedHandle<'static, &'static dyn crate::os::popcorn::proto::proc::Thread> {
     let id = unsafe { (*thrd_current()).tid } as isize;
-    unsafe { BorrowedHandle::from_raw_handle(RawHandle(id)) }
+    unsafe { BorrowedHandle::borrow_raw(RawHandle(id)) }
 }
 
