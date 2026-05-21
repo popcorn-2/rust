@@ -1,7 +1,4 @@
-#![stable(feature = "popcorn_std", since = "1.88.0")]
-
 use core::mem::ManuallyDrop;
-
 use crate::ffi::OsString;
 use crate::process::Command;
 use super::handle::OwnedHandle;
@@ -9,13 +6,10 @@ use crate::sys::AsInnerMut;
 use super::handle::{FromRawHandle, AsRawHandle};
 use crate::io::Error;
 
-#[stable(feature = "popcorn_std", since = "1.88.0")]
 pub trait CommandExt: crate::sealed::Sealed {
-    #[stable(feature = "popcorn_std", since = "1.88.0")]
     fn handle(&mut self, id: OsString, handle: impl Into<Handle>) -> &mut Command;
 }
 
-#[stable(feature = "popcorn_std", since = "1.88.0")]
 impl CommandExt for Command {
     #[track_caller]
     fn handle(&mut self, id: OsString, handle: impl Into<Handle>) -> &mut Command {
@@ -37,7 +31,6 @@ impl CommandExt for Command {
     }
 }
 
-#[stable(feature = "popcorn_std", since = "1.88.0")]
 #[derive(Debug)]
 pub enum Handle {
     Null,
@@ -45,13 +38,10 @@ pub enum Handle {
     Handle(OwnedHandle<()>),
 }
 
-#[stable(feature = "popcorn_std", since = "1.88.0")]
 pub fn inherit() -> Handle { Handle::Inherit }
 
-#[stable(feature = "popcorn_std", since = "1.88.0")]
 pub fn null() -> Handle { Handle::Null }
 
-#[stable(feature = "popcorn_std", since = "1.88.0")]
 pub fn inherit_from<T>(from: OwnedHandle<T>) -> Handle {
     let from = ManuallyDrop::new(from);
     Handle::Handle(
