@@ -1,8 +1,8 @@
 use core::io::BorrowedBuf;
 
 use crate::io;
-use crate::os::popcorn::proto::{io::Read, io::ReadTr, io::Write, io::WriteTr};
-use crate::os::popcorn::handle::{FromRawHandle, BorrowedHandle, RawHandle};
+use crate::os::popcorn::proto::{io::Read, io::Write};
+use crate::os::popcorn::io::{BorrowedHandle, RawHandle};
 
 pub struct Stdin;
 pub struct Stdout;
@@ -18,7 +18,7 @@ impl io::Read for Stdin {
     #[inline]
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         let mut buf = BorrowedBuf::from(buf);
-        let handle = unsafe { BorrowedHandle::<'static, Read>::from_raw_handle(RawHandle(0)) };
+        let handle = unsafe { BorrowedHandle::<'static, &dyn Read>::borrow_raw(RawHandle(0)) };
 		match handle.read(buf.unfilled()) {
 			Ok(res) => Ok(res),
 			Err(e) if e.kind() == io::ErrorKind::InvalidInput => Ok(0), // no stdin attached
@@ -36,7 +36,7 @@ impl Stdout {
 impl io::Write for Stdout {
     #[inline]
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-		let handle = unsafe { BorrowedHandle::<'static, Write>::from_raw_handle(RawHandle(1)) };
+		let handle = unsafe { BorrowedHandle::<'static, &dyn Write>::borrow_raw(RawHandle(1)) };
 		match handle.write(buf) {
 			Ok(res) => Ok(res),
 			Err(e) if e.kind() == io::ErrorKind::InvalidInput => Ok(0), // no stdin attached
@@ -57,7 +57,7 @@ impl Stderr {
 impl io::Write for Stderr {
     #[inline]
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-		let handle = unsafe { BorrowedHandle::<'static, Write>::from_raw_handle(RawHandle(2)) };
+		let handle = unsafe { BorrowedHandle::<'static, &dyn Write>::borrow_raw(RawHandle(2)) };
 		match handle.write(buf) {
 			Ok(res) => Ok(res),
 			Err(e) if e.kind() == io::ErrorKind::InvalidInput => Ok(0), // no stdin attached

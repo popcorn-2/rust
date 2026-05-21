@@ -1,4 +1,4 @@
-use core::{fmt::{Debug, Formatter}, marker::PhantomData};
+use core::{fmt::{self, Debug, Formatter}, marker::PhantomData};
 
 use crate::{ffi::OsStr, fs::File};
 use crate::sys::{FromInner, AsInner};
@@ -460,3 +460,17 @@ macro_rules! impl_is_terminal {
 }
 
 impl_is_terminal!(I @ BorrowedHandle<'_, I>, OwnedHandle<I>);
+
+#[stable(feature = "io_safety", since = "1.63.0")]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct HandleNotFoundError(pub(crate) ());
+
+#[stable(feature = "io_safety", since = "1.63.0")]
+impl fmt::Display for HandleNotFoundError {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        "A handle could not be found".fmt(fmt)
+    }
+}
+
+#[stable(feature = "io_safety", since = "1.63.0")]
+impl crate::error::Error for HandleNotFoundError {}

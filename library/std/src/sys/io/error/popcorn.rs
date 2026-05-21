@@ -24,7 +24,7 @@ fn decode_error_code(code: isize) -> (crate::io::ErrorKind, &'static str) {
         4 => /* Error::EndpointNotFound */ (NotFound, "could not find requested endpoint"),
         5 => /* Error::NameInUse */ (AlreadyExists, "requested endpoint is already in use"),
         6 => /* Error::InvalidHandle */ (InvalidInput, "invalid handle"),
-        7 => /* Error::Overflow */ (Other, "failed to allocate numeric identifier due to overflow"),
+        7 => /* Error::Overflow */ (QuotaExceeded, "too many allocated resources"),
         8 => /* Error::InvalidName */ (InvalidData, "requested endpoint path contained invalid characters"),
         9 => /* Error::DeadServer */ (Other, "server has disconnected"),
         10 => /* Error::InvalidReturn */ (InvalidInput, "invalid return type for method (likely non-numeric return for memory out)"),

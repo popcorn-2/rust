@@ -1,11 +1,14 @@
 use super::ProtocolTuple;
 
 #[marker]
-pub trait HasProtocol<T: ?Sized> {}
+pub trait HasProtocol<T> {}
 
-impl<T: ?Sized> HasProtocol<T> for T where Self: ProtocolTuple {}
+// Ensures all protocols will appear on a RawHandle
+impl<T> HasProtocol<T> for crate::os::popcorn::io::AnyProtocol {}
+
+impl<T> HasProtocol<T> for T where Self: ProtocolTuple {}
 #[cfg_attr(doc, doc(fake_variadic))]
-impl<T: ?Sized> HasProtocol<T> for (T,) where Self: ProtocolTuple {}
+impl<T> HasProtocol<T> for (T,) where Self: ProtocolTuple {}
 #[doc(hidden)]
 impl<T, U> HasProtocol<T> for (T, U) where Self: ProtocolTuple {}
 #[doc(hidden)]

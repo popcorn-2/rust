@@ -83,8 +83,8 @@ pub fn exit(code: i32) -> ! {
             moto_rt::process::exit(code)
         }
         target_os = "popcorn" => {
-            use crate::os::popcorn::proto::proc::ThreadTr;
-            if let Some(process_handle) = crate::os::popcorn::env::get_handle::<crate::os::popcorn::proto::proc::Thread>("thread.main") {
+            use crate::os::popcorn::proto::proc::Thread;
+            if let Some(process_handle) = crate::os::popcorn::env::get_handle::<&dyn crate::os::popcorn::proto::proc::Thread>("thread.main") {
                 // thread.main handle should always exist but if not then just abort i guess?
                 let _ = process_handle.exit(code as isize);
             }

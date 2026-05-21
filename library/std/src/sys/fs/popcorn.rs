@@ -3,39 +3,83 @@
 use crate::ffi::OsString;
 use crate::fmt;
 use crate::io::{self, BorrowedCursor, Error, IoSlice, IoSliceMut, SeekFrom};
-use crate::os::popcorn::ffi::OsStrExt;
-use crate::os::popcorn::proto::io::{ReadTr, WriteTr};
 use crate::path::{Path, PathBuf};
 use crate::sys::time::SystemTime;
 use crate::sys::unsupported;
-use crate::os::popcorn::handle::{OwnedHandle, FromRawHandle, RawHandle, AsRawHandle, AsHandle, BorrowedHandle};
-use crate::os::popcorn::proto::{fs::File as AbiFile, io::Seek, io::Read as AbiRead, io::Write as AbiWrite};
+use crate::os::popcorn::io::{OwnedHandle, FromRawHandle, RawHandle, AsRawHandle, IntoRawHandle, BorrowedHandle, AsHandle};
+use crate::os::popcorn::proto::{io::Read as AbiRead, io::Write as AbiWrite};
 use core::hash::{Hash, Hasher};
 use core::io::BorrowedBuf;
-use core::mem::ManuallyDrop;
 use crate::fs::TryLockError;
-use crate::sys::FromInner;
-pub use crate::sys::fs::common::{Dir, copy, remove_dir_all};
+use crate::sys::{FromInner, AsInner};
+use crate::os::popcorn::fs::DirExt;
+
+pub use crate::sys::fs::common::{copy, remove_dir_all};
+
+mod dir;
+pub use dir::Dir;
 
 pub struct File {
-    handle: OwnedHandle<AbiFile>,
+    handle: OwnedHandle,
 }
 
-impl FromInner<OwnedHandle<AbiFile>> for File {
-    fn from_inner(handle: OwnedHandle<AbiFile>) -> Self {
-        Self { handle }
+impl FromInner<OwnedHandle<&dyn AbiRead>> for File {
+    fn from_inner(handle: OwnedHandle<&dyn AbiRead>) -> Self {
+        Self { handle: handle.type_erase() }
     }
 }
 
-impl AsHandle<AbiFile> for File {
-    fn as_handle(&self) -> BorrowedHandle<'_, AbiFile> {
-        self.handle.as_handle()
+impl FromInner<OwnedHandle<&dyn AbiWrite>> for File {
+    fn from_inner(handle: OwnedHandle<&dyn AbiWrite>) -> Self {
+        Self { handle: handle.type_erase() }
+    }
+}
+
+impl FromInner<OwnedHandle<(&dyn AbiRead, &dyn AbiWrite)>> for File {
+    fn from_inner(handle: OwnedHandle<(&dyn AbiRead, &dyn AbiWrite)>) -> Self {
+        Self { handle: handle.type_erase() }
+    }
+}
+
+impl FromInner<OwnedHandle<(&dyn AbiWrite, &dyn AbiRead)>> for File {
+    fn from_inner(handle: OwnedHandle<(&dyn AbiWrite, &dyn AbiRead)>) -> Self {
+        Self { handle: handle.type_erase() }
+    }
+}
+
+impl AsHandle<&'static dyn AbiRead> for File {
+    fn as_handle(&self) -> BorrowedHandle<'_, &'static dyn AbiRead> {
+        self.handle.as_handle().force_protocol()
+    }
+}
+
+impl AsHandle<&'static dyn AbiWrite> for File {
+    fn as_handle(&self) -> BorrowedHandle<'_, &'static dyn AbiWrite> {
+        self.handle.as_handle().force_protocol()
+    }
+}
+
+impl AsHandle<(&'static dyn AbiRead, &'static dyn AbiWrite)> for File {
+    fn as_handle(&self) -> BorrowedHandle<'_, (&'static dyn AbiRead, &'static dyn AbiWrite)> {
+        self.handle.as_handle().force_protocol()
+    }
+}
+
+impl AsHandle<(&'static dyn AbiWrite, &'static dyn AbiRead)> for File {
+    fn as_handle(&self) -> BorrowedHandle<'_, (&'static dyn AbiWrite, &'static dyn AbiRead)> {
+        self.handle.as_handle().force_protocol()
     }
 }
 
 impl AsRawHandle for File {
     fn as_raw_handle(&self) -> RawHandle {
         self.handle.as_raw_handle()
+    }
+}
+
+impl IntoRawHandle for File {
+    fn into_raw_handle(self) -> RawHandle {
+        self.handle.into_raw_handle()
     }
 }
 
@@ -250,49 +294,21 @@ impl OpenOptions {
 }
 
 impl File {
+    #[expect(unused)]
     pub fn open(path: &Path, opts: &OpenOptions) -> io::Result<File> {
         let create = match (opts.create, opts.create_new) {
             (_, true) => 1,
             (true, false) => 2,
             (false, false) => 0,
         };
-        let handle = match (opts.read, opts.write) {
-            (false, false) => {
-                let handle = OwnedHandle::<(AbiFile, Seek)>::new(path.as_os_str().as_str(), (AbiFile {
-                    create,
-                    append: opts.append,
-                    truncate: opts.truncate,
-                }, Seek {}))?;
-                ManuallyDrop::new(handle).as_raw_handle()
-            },
-            (true, false) => {
-                let handle = OwnedHandle::<(AbiFile, Seek, AbiRead)>::new(path.as_os_str().as_str(), (AbiFile {
-                    create,
-                    append: opts.append,
-                    truncate: opts.truncate,
-                }, Seek {}, AbiRead {}))?;
-                ManuallyDrop::new(handle).as_raw_handle()
-            },
-            (false, true) => {
-                let handle = OwnedHandle::<(AbiFile, Seek, AbiWrite)>::new(path.as_os_str().as_str(), (AbiFile {
-                    create,
-                    append: opts.append,
-                    truncate: opts.truncate,
-                }, Seek {}, AbiWrite {}))?;
-                ManuallyDrop::new(handle).as_raw_handle()
-            },
-            (true, true) => {
-                let handle = OwnedHandle::<(AbiFile, Seek, AbiRead, AbiWrite)>::new(path.as_os_str().as_str(), (AbiFile {
-                    create,
-                    append: opts.append,
-                    truncate: opts.truncate,
-                }, Seek {}, AbiRead {}, AbiWrite {}))?;
-                ManuallyDrop::new(handle).as_raw_handle()
-            },
-        };
 
-        let handle = unsafe { OwnedHandle::<AbiFile>::from_raw_handle(handle) };
-        Ok(File { handle })
+        let cwd = crate::fs::Dir::working_dir().ok_or(io::Error::new(
+            io::ErrorKind::PermissionDenied, // does this make sense here? if we don't have a cwd
+                                             // that just means the executable has no real fs perms
+            Box::new(crate::os::popcorn::io::HandleNotFoundError(())), // feels like this could be improved
+        ))?;
+
+        cwd.as_inner().open_file(path, opts)
     }
 
     pub fn file_attr(&self) -> io::Result<FileAttr> {
@@ -338,7 +354,7 @@ impl File {
     }
 
     pub fn read_buf(&self, cursor: BorrowedCursor<'_>) -> io::Result<()> {
-        self.handle.try_as::<AbiRead>()
+        self.handle.try_as::<&dyn AbiRead>()
             .ok_or(Error::from_raw_os_error(3))?
             .read(cursor)
             .map(|_| ())
@@ -353,7 +369,7 @@ impl File {
     }
 
     pub fn write(&self, buf: &[u8]) -> io::Result<usize> {
-        self.handle.try_as::<AbiWrite>()
+        self.handle.try_as::<&dyn AbiWrite>()
             .ok_or(Error::from_raw_os_error(3))?
             .write(buf)
     }

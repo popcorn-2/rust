@@ -29,7 +29,7 @@ pub macro syscall {
         'syscall: {
             let uid = <u128 as ::core::convert::From<_>>::from($uid);
             let arg0: $crate::os::popcorn::io::RawHandle = $arg0;
-            let arg1 = <u64 as ::core::convert::From<_>>::from($arg1);
+            let arg1 = <usize as ::core::convert::From<_>>::from($arg1);
             let low: u64;
             let high: u64;
             ::core::arch::asm!(
@@ -55,8 +55,8 @@ pub macro syscall {
         'syscall: {
             let uid = <u128 as ::core::convert::From<_>>::from($uid);
             let arg0: $crate::os::popcorn::io::RawHandle = $arg0;
-            let arg1 = <u64 as ::core::convert::From<_>>::from($arg1);
-            let arg2 = <u64 as ::core::convert::From<_>>::from($arg2);
+            let arg1 = <usize as ::core::convert::From<_>>::from($arg1);
+            let arg2 = <usize as ::core::convert::From<_>>::from($arg2);
             let low: u64;
             let high: u64;
             ::core::arch::asm!(
@@ -82,9 +82,9 @@ pub macro syscall {
         'syscall: {
             let uid = <u128 as ::core::convert::From<_>>::from($uid);
             let arg0: $crate::os::popcorn::io::RawHandle = $arg0;
-            let arg1 = <u64 as ::core::convert::From<_>>::from($arg1);
-            let arg2 = <u64 as ::core::convert::From<_>>::from($arg2);
-            let arg3 = <u64 as ::core::convert::From<_>>::from($arg3);
+            let arg1 = <usize as ::core::convert::From<_>>::from($arg1);
+            let arg2 = <usize as ::core::convert::From<_>>::from($arg2);
+            let arg3 = <usize as ::core::convert::From<_>>::from($arg3);
             let low: u64;
             let high: u64;
             ::core::arch::asm!(
@@ -110,10 +110,10 @@ pub macro syscall {
         'syscall: {
             let uid = <u128 as ::core::convert::From<_>>::from($uid);
             let arg0: $crate::os::popcorn::io::RawHandle = $arg0;
-            let arg1 = <u64 as ::core::convert::From<_>>::from($arg1);
-            let arg2 = <u64 as ::core::convert::From<_>>::from($arg2);
-            let arg3 = <u64 as ::core::convert::From<_>>::from($arg3);
-            let arg4 = <u64 as ::core::convert::From<_>>::from($arg4);
+            let arg1 = <usize as ::core::convert::From<_>>::from($arg1);
+            let arg2 = <usize as ::core::convert::From<_>>::from($arg2);
+            let arg3 = <usize as ::core::convert::From<_>>::from($arg3);
+            let arg4 = <usize as ::core::convert::From<_>>::from($arg4);
             let low: u64;
             let high: u64;
             ::core::arch::asm!(

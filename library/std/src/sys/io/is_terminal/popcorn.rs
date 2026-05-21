@@ -1,9 +1,7 @@
-use crate::os::popcorn::handle::{AsHandle, AsRawHandle};
-use crate::os::popcorn::proto::Protocol;
+use crate::os::popcorn::io::AsRawHandle;
+use crate::os::popcorn::proto::io::Terminal;
+use crate::os::popcorn::proto::abi_v1::AbiV1;
 
-pub fn is_terminal<I: ?Sized>(handle: &impl AsHandle<I>) -> bool {
-    handle.as_handle()
-        .as_raw_handle()
-        .has_protocol(&[crate::os::popcorn::proto::io::Terminal::UID])
-        .unwrap_or(false)
+pub fn is_terminal(handle: &impl AsRawHandle) -> bool {
+    handle.as_raw_handle().has_protocols::<&dyn Terminal>()
 }
