@@ -10,12 +10,20 @@ impl AsRawHandle for RawHandle {
     }
 }
 
+#[diagnostic::on_unimplemented(
+    message = "`IntoRawHandle` requires `{Self}` to be an owning handle",
+    note = "`{Self}` may not have ownership of the handle"
+)]
 impl IntoRawHandle for RawHandle {
     fn into_raw_handle(self) -> RawHandle {
         self
     }
 }
 
+#[diagnostic::on_unimplemented(
+    message = "`FromRawHandle` requires `{Self}` to be an owning handle",
+    note = "`{Self}` may not be able to take ownership of the handle"
+)]
 impl FromRawHandle for RawHandle {
     unsafe fn from_raw_handle(handle: RawHandle) -> Self {
         handle

@@ -90,11 +90,37 @@ impl Proto for HasProtocol<T> + PopcornAsyncHandle { // or something
 
 */
 
-#[allow_internal_unstable(trivial_bounds)]
+#[unstable(feature = "std_internals", issue = "none")]
+pub macro protocol_fn_parser {
+    (@def_sync fn $fn_name:ident $(<$($generic_ident:ident $(: $generic_bound:path)?),* $(,)?>)? (& $self_ident:ident $(, $($args:tt)*)?) -> std::io::Result<$ret:ty>) => {
+        fn $fn_name $(< $($generic_ident $(: $generic_bound)?),* >)? (& $self_ident, $($($args)*)?) -> $crate::io::Result<$ret> where Self: Sized;
+    },
+    (@def_sync fn $fn_name:ident $(<$($generic_ident:ident $(: $generic_bound:path)?),* $(,)?>)? ($self_ident:ident $(, $($args:tt)*)?) -> std::io::Result<$ret:ty>) => {
+        fn $fn_name $(< $($generic_ident $(: $generic_bound)?),* >)? ($self_ident, $($($args)*)?) -> $crate::io::Result<$ret> where Self: Sized + $crate::os::popcorn::handle::IntoRawHandle;
+    },
+    (@def_async fn $fn_name:ident $(<$($generic_ident:ident $(: $generic_bound:path)?),* $(,)?>)? (& $self_ident:ident $(, $($args:tt)*)?) -> std::io::Result<$ret:ty>) => {
+        fn $fn_name $(< $($generic_ident $(: $generic_bound)?),* >)? (& $self_ident, $($($args)*)?) -> impl ::core::future::Future<Output = $crate::io::Result<$ret>> where Self: Sized;
+    },
+    (@def_async fn $fn_name:ident $(<$($generic_ident:ident $(: $generic_bound:path)?),* $(,)?>)? ($self_ident:ident $(, $($args:tt)*)?) -> std::io::Result<$ret:ty>) => {
+        fn $fn_name $(< $($generic_ident $(: $generic_bound)?),* >)? ($self_ident, $($($args)*)?) -> impl ::core::future::Future<Output = $crate::io::Result<$ret>> where Self: Sized + $crate::os::popcorn::handle::IntoRawHandle;
+    },
+
+    (@impl_sync fn $fn_name:ident $(<$($generic_ident:ident $(: $generic_bound:path)?),* $(,)?>)? (& $self_ident:ident $(, $($args:tt)*)?) -> std::io::Result<$ret:ty> $block:block) => {
+        fn $fn_name $(< $($generic_ident $(: $generic_bound)?),* >)? (& $self_ident, $($($args)*)?) -> $crate::io::Result<$ret> where Self: Sized $block
+    },
+    (@impl_sync fn $fn_name:ident $(<$($generic_ident:ident $(: $generic_bound:path)?),* $(,)?>)? ($self_ident:ident $(, $($args:tt)*)?) -> std::io::Result<$ret:ty> $block:block) => {
+        fn $fn_name $(< $($generic_ident $(: $generic_bound)?),* >)? ($self_ident, $($($args)*)?) -> $crate::io::Result<$ret> where Self: Sized + $crate::os::popcorn::handle::IntoRawHandle $block
+    },
+
+    (@convert_handle & $self_ident:expr $(, $($args:tt)*)?) => { $crate::os::popcorn::handle::AsRawHandle::as_raw_handle($self_ident) },
+    (@convert_handle $self_ident:expr $(, $($args:tt)*)?) => { $crate::os::popcorn::handle::IntoRawHandle::into_raw_handle($self_ident) },
+}
+
+#[allow_internal_unstable(trivial_bounds, std_internals)]
 pub macro protocol {
     () => {},
     ($vis:vis unsafe protocol ($name_sync:ident, $name_async:ident) = $uid:literal {
-        $(fn $fn_name:ident @ $fn_num:literal $(<$($generic_ident:ident $(: $generic_bound:path)?),* $(,)?>)? (&self $($args:tt)*) -> std::io::Result<$ret:ty> {
+        $(fn $fn_name:ident @ $fn_num:literal $(<$($generic_ident:ident $(: $generic_bound:path)?),* $(,)?>)? ($($args:tt)*) -> std::io::Result<$ret:ty> {
             args => [
                 $($arg_expr:expr),* $(,)?
             ];
@@ -105,7 +131,7 @@ pub macro protocol {
         $vis trait $name_sync {
             #![allow(patterns_in_fns_without_body)]
             $(
-                fn $fn_name $(< $($generic_ident $(: $generic_bound)?),* >)? (&self $($args)*) -> $crate::io::Result<$ret> where Self: Sized;
+                $crate::os::popcorn::proto::protocol_fn_parser!(@def_sync fn $fn_name $(<$($generic_ident $(: $generic_bound)?),* >)? ($($args)*) -> std::io::Result<$ret>);
             )*
         }
 
@@ -116,7 +142,7 @@ pub macro protocol {
         $vis trait $name_async {
             #![allow(patterns_in_fns_without_body)]
             $(
-                fn $fn_name $(< $($generic_ident $(: $generic_bound)?),* >)? (&self $($args)*) -> impl ::core::future::Future<Output = $crate::io::Result<$ret>> where Self: Sized;
+                $crate::os::popcorn::proto::protocol_fn_parser!(@def_async fn $fn_name $(<$($generic_ident $(: $generic_bound)?),* >)? ($($args)*) -> std::io::Result<$ret>);
             )*
         }
 
@@ -126,20 +152,22 @@ pub macro protocol {
 
         impl<'a, T: $crate::os::popcorn::io::PopcornHandle<Protocols: $crate::os::popcorn::proto::HasProtocol<&'a dyn $name_sync>>> $name_sync for T {
             $(
-                fn $fn_name $(< $($generic_ident $(: $generic_bound)?),* >)? (&self $($args)*) -> $crate::io::Result<$ret> where Self: Sized {
-                    // we do this to keep argument evaluation outside the unsafe block
-                    #[allow(unused)] // in the case of zero args
-                    let args = ($($arg_expr, )*);
+                $crate::os::popcorn::proto::protocol_fn_parser!(@impl_sync
+                    fn $fn_name $(< $($generic_ident $(: $generic_bound)?),* >)? ($($args)*) -> $crate::io::Result<$ret> {
+                        // we do this to keep argument evaluation outside the unsafe block
+                        #[allow(unused)] // in the case of zero args
+                        let args = ($($arg_expr, )*);
 
-                    unsafe {
-                        $crate::os::popcorn::sys::syscall!(
-                            (($fn_num as u128) << 96 | ($uid as u128)),
-                            self.as_raw_handle()
-                            $(, args . ${index()} ${ignore($arg_expr)})*
-                        )
-                    }.map(|$ret_ident| $ret_expr)
-                     .map_err(|e| $crate::io::Error::from_raw_os_error(e as isize))
-                }
+                        unsafe {
+                            $crate::os::popcorn::sys::syscall!(
+                                (($fn_num as u128) << 96 | ($uid as u128)),
+                                $crate::os::popcorn::proto::protocol_fn_parser!(@convert_handle $($args)*)
+                                $(, args . ${index()} ${ignore($arg_expr)})*
+                            )
+                        }.map(|$ret_ident| $ret_expr)
+                        .map_err(|e| $crate::io::Error::from_raw_os_error(e as isize))
+                    }
+                );
             )*
         }
 
@@ -280,11 +308,11 @@ pub mod proc {
 
     super::protocol! {
         pub unsafe protocol (Builder, AsyncBuilder) = 9 {
-            /*fn spawn@1(self) -> std::io::Result<OwnedHandle<Thread>> {
+            fn spawn@1(self) -> std::io::Result<OwnedHandle<Thread>> {
                 args => [];
 
                 ret => OwnedHandle::from_raw_handle(RawHandle(ret as isize));
-            }*/
+            }
 
 			fn add_handle@2(&self, name: &OsStr, handle: impl IntoRawHandle) -> std::io::Result<()> {
                 args => [
