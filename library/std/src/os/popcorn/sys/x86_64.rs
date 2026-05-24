@@ -171,7 +171,7 @@ pub macro syscall {
             let low: u64;
             let high: u64;
             ::core::arch::asm!(
-                "clc",
+                "stc",
                 "syscall",
                 "jc {error}",
                 inout("rax") uid as u64 => low,
@@ -200,7 +200,7 @@ pub macro syscall {
             let low: u64;
             let high: u64;
             ::core::arch::asm!(
-                "clc",
+                "stc",
                 "syscall",
                 "jc {error}",
                 inout("rax") uid as u64 => low,
@@ -230,7 +230,7 @@ pub macro syscall {
             let low: u64;
             let high: u64;
             ::core::arch::asm!(
-                "clc",
+                "stc",
                 "syscall",
                 "jc {error}",
                 inout("rax") uid as u64 => low,
@@ -261,7 +261,7 @@ pub macro syscall {
             let low: u64;
             let high: u64;
             ::core::arch::asm!(
-                "clc",
+                "stc",
                 "syscall",
                 "jc {error}",
                 inout("rax") uid as u64 => low,
