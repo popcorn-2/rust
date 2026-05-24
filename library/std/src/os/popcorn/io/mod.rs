@@ -53,13 +53,13 @@ pub use borrowed_handle::{BorrowedHandle, AsHandle};
 pub enum AnyProtocol {}
 
 pub trait PopcornHandle: AsRawHandle/* + FromRawHandle*/ {
-    type Protocols: ?Sized;
+    type Protocols;
 }
 
 pub trait PopcornAsyncHandle: AsRawHandle/* + FromRawHandle*/ {
-    type Protocols: ?Sized;
+    type Protocols;
 
-    fn wait_result<T>(f: impl FnOnce(isize) -> T) -> impl Future<Output = T>;
+    fn wait_result(f: impl FnOnce(usize) -> crate::io::Result<u128>) -> impl Future<Output = crate::io::Result<u128>>;
 }
 
 #[stable(feature = "io_safety", since = "1.63.0")]

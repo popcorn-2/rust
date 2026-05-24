@@ -90,6 +90,7 @@ impl Proto for HasProtocol<T> + PopcornAsyncHandle { // or something
 
 */
 
+#[allow_internal_unstable(macro_metavar_expr)]
 macro protocol_fn_parser {
     (@def_sync fn $fn_name:ident $(<$($generic_ident:ident $(: $generic_bound:path)?),* $(,)?>)? (& $self_ident:ident $(, $($args:tt)*)?) -> std::io::Result<$ret:ty>) => {
         fn $fn_name $(< $($generic_ident $(: $generic_bound)?),* >)? (& $self_ident, $($($args)*)?) -> $crate::io::Result<$ret> where Self: Sized;
@@ -104,17 +105,18 @@ macro protocol_fn_parser {
         fn $fn_name $(< $($generic_ident $(: $generic_bound)?),* >)? ($self_ident, $($($args)*)?) -> impl ::core::future::Future<Output = $crate::io::Result<$ret>> where Self: Sized + $crate::os::popcorn::io::IntoRawHandle;
     },
 
-    (@impl_sync fn $fn_name:ident $(<$($generic_ident:ident $(: $generic_bound:path)?),* $(,)?>)? (& $self_ident:ident $(, $($args:tt)*)?) -> std::io::Result<$ret:ty> $block:block) => {
-        fn $fn_name $(< $($generic_ident $(: $generic_bound)?),* >)? (& $self_ident, $($($args)*)?) -> $crate::io::Result<$ret> where Self: Sized $block
+    (@impl fn $fn_name:ident $(<$($generic_ident:ident $(: $generic_bound:path)?),* $(,)?>)? (& $self_ident:ident $(, $($args:tt)*)?) -> $ret:ty $block:block) => {
+        fn $fn_name $(< $($generic_ident $(: $generic_bound)?),* >)? (& $self_ident, $($($args)*)?) -> $ret where Self: Sized $block
     },
-    (@impl_sync fn $fn_name:ident $(<$($generic_ident:ident $(: $generic_bound:path)?),* $(,)?>)? ($self_ident:ident $(, $($args:tt)*)?) -> std::io::Result<$ret:ty> $block:block) => {
-        fn $fn_name $(< $($generic_ident $(: $generic_bound)?),* >)? ($self_ident, $($($args)*)?) -> $crate::io::Result<$ret> where Self: Sized + $crate::os::popcorn::io::IntoRawHandle $block
+    (@impl fn $fn_name:ident $(<$($generic_ident:ident $(: $generic_bound:path)?),* $(,)?>)? ($self_ident:ident $(, $($args:tt)*)?) -> $ret:ty $block:block) => {
+        fn $fn_name $(< $($generic_ident $(: $generic_bound)?),* >)? ($self_ident, $($($args)*)?) -> $ret where Self: Sized + $crate::os::popcorn::io::IntoRawHandle $block
     },
 
     (@convert_handle & $self_ident:expr $(, $($args:tt)*)?) => { $crate::os::popcorn::io::AsRawHandle::as_raw_handle($self_ident) },
     (@convert_handle $self_ident:expr $(, $($args:tt)*)?) => { $crate::os::popcorn::io::IntoRawHandle::into_raw_handle($self_ident) },
 }
 
+#[allow_internal_unstable(macro_metavar_expr)]
 pub macro protocol {
     () => {},
     ($vis:vis unsafe protocol ($name_sync:ident, $name_async:ident) = $uid:literal {
@@ -148,10 +150,10 @@ pub macro protocol {
             const UID: u128 = $uid;
         }
 
-        impl<'a, T: $crate::os::popcorn::io::PopcornHandle<Protocols: $crate::os::popcorn::proto::HasProtocol<&'a dyn $name_sync>>> $name_sync for T {
+        impl<T: $crate::os::popcorn::io::PopcornHandle<Protocols: $crate::os::popcorn::proto::HasProtocol<&'static dyn $name_sync>>> $name_sync for T {
             $(
-                $crate::os::popcorn::proto::protocol_fn_parser!(@impl_sync
-                    fn $fn_name $(< $($generic_ident $(: $generic_bound)?),* >)? ($($args)*) -> std::io::Result<$ret> {
+                $crate::os::popcorn::proto::protocol_fn_parser!(@impl
+                    fn $fn_name $(< $($generic_ident $(: $generic_bound)?),* >)? ($($args)*) -> $crate::io::Result<$ret> {
                         // we do this to keep argument evaluation outside the unsafe block
                         #[allow(unused)] // in the case of zero args
                         let args = ($($arg_expr, )*);
@@ -169,22 +171,31 @@ pub macro protocol {
             )*
         }
 
-        /*impl<T: $crate::os::popcorn::io::PopcornAsyncHandle<Protocols: $crate::os::popcorn::proto::HasProtocol<$name_async>>> $name_async for T {
+        impl<T: $crate::os::popcorn::io::PopcornAsyncHandle<Protocols: $crate::os::popcorn::proto::HasProtocol<&'static dyn $name_async>>> $name_async for T {
             $(
-                fn $fn_name $(< $($generic_ident $(: $generic_bound)?),* >)? (&self, $($args)*) -> impl ::core::future::Future<Output = $crate::io::Result<$ret>> {
-                    T::wait_result(|key|
-                        unsafe {
-                            $crate::syscall_async!(
-                                (($fn_num as u128) << 96 | ($uid as u128)),
-                                self.as_raw_handle(),
-                                $($arg_expr),*
-                            )
-                        }.map(|$ret_ident| $ret_expr)
-                        .map_err(|e| $crate::io::Error::from_raw_os_error(e as isize))
-                    )
-                }
+                $crate::os::popcorn::proto::protocol_fn_parser!(@impl
+                    fn $fn_name $(< $($generic_ident $(: $generic_bound)?),* >)? ($($args)*) -> impl ::core::future::Future<Output = $crate::io::Result<$ret>> {
+                        // we do this to keep argument evaluation outside the unsafe block
+                        #[allow(unused)] // in the case of zero args
+                        let args = ($($arg_expr, )*);
+
+                        async move {
+                            let res = T::wait_result(move |key|
+                                unsafe {
+                                    $crate::os::popcorn::sys::syscall!(
+                                        async(key)
+                                        (($fn_num as u128) << 96 | ($uid as u128)),
+                                        $crate::os::popcorn::proto::protocol_fn_parser!(@convert_handle $($args)*)
+                                        $(, args . ${index()} ${ignore($arg_expr)})*
+                                    )
+                                }.map_err(|e| $crate::io::Error::from_raw_os_error(e as isize))
+                            ).await;
+                            res.map(|$ret_ident| $ret_expr)
+                        }
+                    }
+                );
             )*
-        }*/
+        }
 
         $crate::os::popcorn::proto::protocol!($($rest)*);
     }
