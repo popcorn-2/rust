@@ -9,21 +9,12 @@ impl AsRawHandle for RawHandle {
         RawHandle(self.0)
     }
 }
-
-#[diagnostic::on_unimplemented(
-    message = "`IntoRawHandle` requires `{Self}` to be an owning handle",
-    note = "`{Self}` may not have ownership of the handle"
-)]
 impl IntoRawHandle for RawHandle {
     fn into_raw_handle(self) -> RawHandle {
         self
     }
 }
 
-#[diagnostic::on_unimplemented(
-    message = "`FromRawHandle` requires `{Self}` to be an owning handle",
-    note = "`{Self}` may not be able to take ownership of the handle"
-)]
 impl FromRawHandle for RawHandle {
     unsafe fn from_raw_handle(handle: RawHandle) -> Self {
         handle
@@ -52,6 +43,10 @@ pub trait AsRawHandle {
 
 /// A trait to express the ability to consume an object and acquire ownership of
 /// its raw handle.
+#[diagnostic::on_unimplemented(
+    message = "`IntoRawHandle` requires `{Self}` to own a handle",
+    note = "`{Self}` may not have ownership of the handle"
+)]
 #[stable(feature = "into_raw_os", since = "1.4.0")]
 pub trait IntoRawHandle {
     /// Consumes this object, returning the raw underlying handle.
@@ -69,6 +64,10 @@ pub trait IntoRawHandle {
 }
 
 /// Constructs I/O objects from raw handles.
+#[diagnostic::on_unimplemented(
+    message = "`FromRawHandle` requires `{Self}` to have ownership of a handle",
+    note = "`{Self}` may not be able to take ownership of the handle"
+)]
 #[stable(feature = "from_raw_os", since = "1.1.0")]
 pub trait FromRawHandle {
     /// Constructs a new I/O object from the specified raw handle.

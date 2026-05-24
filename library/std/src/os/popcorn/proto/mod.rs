@@ -67,7 +67,7 @@ macro_rules! protocol_tuple {
             ];
 
             type InvertAsync = (
-                $(<$T as Protocol>::InvertAsync),*
+                $(<$T as Protocol>::InvertAsync),* ,
             );
         }
     };
