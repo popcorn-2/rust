@@ -5,12 +5,24 @@ pub use has_protocol::HasProtocol;
 
 pub trait Protocol {
 	const UID: u128;
+
+    type InvertAsync: Protocol;
+}
+
+// hacky?
+impl Protocol for ! {
+    const UID: u128 = 0;
+    type InvertAsync = !;
 }
 
 #[doc(hidden)]
 pub trait ProtocolTuple: crate::sealed::Sealed {
     const UIDs: &'static [u128];
+
+    type InvertAsync: ProtocolList;
 }
+
+pub use ProtocolTuple as ProtocolList;
 
 /*#[derive(Debug, Copy, Clone)]
 #[repr(u16)]
@@ -53,6 +65,10 @@ macro_rules! protocol_tuple {
             const UIDs: &'static [u128] = &[
                 $(<$T as Protocol>::UID),*
             ];
+
+            type InvertAsync = (
+                $(<$T as Protocol>::InvertAsync),*
+            );
         }
     };
 }
@@ -60,6 +76,7 @@ macro_rules! protocol_tuple {
 impl<T> crate::sealed::Sealed for T where T: Protocol {}
 impl<T> ProtocolTuple for T where T: Protocol {
     const UIDs: &'static [u128] = &[<T as Protocol>::UID];
+    type InvertAsync = <T as Protocol>::InvertAsync;
 }
 
 protocol_tuple!(T);
@@ -137,6 +154,7 @@ pub macro protocol {
 
         impl $crate::os::popcorn::proto::Protocol for &dyn $name_sync {
             const UID: u128 = $uid;
+            type InvertAsync = &'static dyn $name_async;
         }
 
         $vis trait $name_async {
@@ -148,6 +166,7 @@ pub macro protocol {
 
         impl $crate::os::popcorn::proto::Protocol for &dyn $name_async {
             const UID: u128 = $uid;
+            type InvertAsync = &'static dyn $name_sync;
         }
 
         impl<T: $crate::os::popcorn::io::PopcornHandle<Protocols: $crate::os::popcorn::proto::HasProtocol<&'static dyn $name_sync>>> $name_sync for T {
@@ -213,6 +232,7 @@ pub mod abi_v1 {
 
     impl super::Protocol for &dyn AbiV1 {
         const UID: u128 = 0;
+        type InvertAsync = !; // hacky?
     }
 
     impl<'a, T: PopcornHandle<Protocols = U>, U> AbiV1 for T {
