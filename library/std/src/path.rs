@@ -110,7 +110,7 @@ use crate::{cmp, fmt, fs, io, sys};
 // Windows Prefixes
 ////////////////////////////////////////////////////////////////////////////////
 
-/// Windows path prefixes, e.g., `C:` or `\\server\share`.
+/// Windows and Popcorn path prefixes, e.g., `C:` or `\\server\share`.
 ///
 /// Windows uses a variety of path prefix styles, including references to drive
 /// volumes (like `C:`), network shared folders (like `\\server\share`), and
@@ -144,6 +144,12 @@ use crate::{cmp, fmt, fs, io, sys};
 /// assert_eq!(UNC(OsStr::new("server"), OsStr::new("share")),
 ///            get_path_prefix(r"\\server\share"));
 /// assert_eq!(Disk(b'C'), get_path_prefix(r"C:\Users\Rust\Pictures\Ferris"));
+/// # }
+/// ```
+/// ```
+/// #![feature(popcorn_std)]
+/// # if cfg!(target_os = "popcorn") {
+/// assert_eq!(Segment(OsStr::new("cache")), get_path_prefix("cache:packages/rust.tar.gz"));
 /// # }
 /// ```
 #[derive(Copy, Clone, Debug, Hash, PartialOrd, Ord, PartialEq, Eq)]
@@ -195,9 +201,11 @@ pub enum Prefix<'a> {
     #[stable(feature = "rust1", since = "1.0.0")]
     Disk(#[stable(feature = "rust1", since = "1.0.0")] u8),
 
-    /// Prefix `fs:` for the given server on Popcorn.
-    #[stable(feature = "rust1", since = "1.0.0")]
-    Server(#[stable(feature = "rust1", since = "1.0.0")] &'a OsStr),
+    /// Popcorn filesystem segment prefix, e.g. `config:`.
+    ///
+    /// The stored value does not include the trailing colon.
+    #[unstable(feature = "popcorn_std", issue = "none")]
+    Segment(#[unstable(feature = "popcorn_std", issue = "none")] &'a OsStr),
 }
 
 impl<'a> Prefix<'a> {
@@ -216,7 +224,7 @@ impl<'a> Prefix<'a> {
             UNC(x, y) => 2 + os_str_len(x) + if os_str_len(y) > 0 { 1 + os_str_len(y) } else { 0 },
             DeviceNS(x) => 4 + os_str_len(x),
             Disk(_) => 2,
-            Server(x) => 1 + os_str_len(x),
+            Segment(x) => 1 + os_str_len(x),
         }
     }
 
@@ -234,7 +242,7 @@ impl<'a> Prefix<'a> {
     /// assert!(!DeviceNS(OsStr::new("BrainInterface")).is_verbatim());
     /// assert!(!UNC(OsStr::new("server"), OsStr::new("share")).is_verbatim());
     /// assert!(!Disk(b'C').is_verbatim());
-    /// assert!(!Server(OsStr::new("fs")).is_verbatim());
+    /// assert!(!Segment(OsStr::new("config")).is_verbatim());
     /// ```
     #[inline]
     #[must_use]
@@ -250,8 +258,8 @@ impl<'a> Prefix<'a> {
     }
 
     #[inline]
-    fn is_server(&self) -> bool {
-        matches!(*self, Prefix::Server(_))
+    fn is_segment(&self) -> bool {
+        matches!(*self, Prefix::Segment(_))
     }
 
     #[inline]

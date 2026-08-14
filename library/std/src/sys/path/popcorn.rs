@@ -19,7 +19,8 @@ pub fn parse_prefix(path: &OsStr) -> Option<Prefix<'_>> {
 
 pub const HAS_PREFIXES: bool = true;
 
-/// Make a POSIX path absolute without changing its semantics.
+/// Make a Popcorn path absolute without changing its semantics.
+// currently copied from unix.rs but needs adjusting for popcorn
 pub(crate) fn absolute(path: &Path) -> io::Result<PathBuf> {
     // This is mostly a wrapper around collecting `Path::components`, with
     // exceptions made where this conflicts with the POSIX specification.
