@@ -154,6 +154,29 @@ enum Fieldless {
     C,
 }
 
+// A C-like, fieldless enum with variants of varying name lengths.
+#[derive(Debug)]
+enum Fieldless0 {
+    A,
+    BBB,
+    CC,
+}
+
+// A C-like, fieldless enum with 10 variants.
+#[derive(Debug)]
+enum Fieldless10 {
+    AAAAA,
+    BBBB,
+    CC,
+    DDDDDDDD,
+    E,
+    FFFFFFFFFFFFF,
+    GGGGGG,
+    Hatsune,
+    IIIIIII,
+    JJJJJJJJJ,
+}
+
 // An enum with multiple fieldless and fielded variants.
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 enum Mixed {
@@ -235,3 +258,21 @@ struct FooCopyAndClone(i32);
 #[derive(Clone)]
 #[derive(Copy)]
 struct FooCloneAndCopy(i32);
+
+#[derive(PartialOrd, Ord)]
+struct FooPartialOrdOrd(i32);
+
+#[derive(Ord, PartialOrd)]
+struct FooOrdPartialOrd(i32);
+
+#[derive(Ord)]
+#[derive(PartialOrd)]
+struct FooOrdBeforePartialOrd(i32);
+
+// FIXME: this case should also have a trivial `PartialOrd` impl.
+#[derive(PartialOrd)]
+#[derive(Ord)]
+struct FooPartialOrdBeforeOrd(i32);
+
+#[derive(PartialOrd, Ord)]
+struct UnitStruct;

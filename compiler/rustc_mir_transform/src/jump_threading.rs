@@ -68,6 +68,7 @@ use rustc_mir_dataflow::value_analysis::{
 use rustc_span::DUMMY_SP;
 use tracing::{debug, instrument, trace};
 
+use crate::PassPolicy;
 use crate::cost_checker::CostChecker;
 
 pub(super) struct JumpThreading;
@@ -75,16 +76,18 @@ pub(super) struct JumpThreading;
 const MAX_COST: u8 = 100;
 
 impl<'tcx> crate::MirPass<'tcx> for JumpThreading {
-    fn is_enabled(&self, sess: &rustc_session::Session) -> bool {
-        if sess.target.is_like_gpu {
+    fn policy(&self, sess: &rustc_session::Session) -> PassPolicy {
+        let enabled_by_default = if sess.target.is_like_gpu {
             // Jump threading can duplicate calls in control-flow.
             // This leads to incorrect code when done for so called "convergent" operations on GPU
             // targets, similar to how inline assembly cannot be duplicated on all targets.
             // Conservatively prevent this by disabling the pass.
             // See also issue #137086.
-            return false;
-        }
-        sess.mir_opt_level() >= 2
+            false
+        } else {
+            sess.mir_opt_level() >= 2
+        };
+        PassPolicy::optimization(enabled_by_default)
     }
 
     #[instrument(skip_all level = "debug")]
@@ -147,10 +150,6 @@ impl<'tcx> crate::MirPass<'tcx> for JumpThreading {
         if let Some(opportunities) = OpportunitySet::new(body, entry_states) {
             opportunities.apply();
         }
-    }
-
-    fn is_required(&self) -> bool {
-        false
     }
 }
 
@@ -396,16 +395,16 @@ impl<'a, 'tcx> TOFinder<'a, 'tcx> {
         stmt: &Statement<'tcx>,
     ) -> Option<(Place<'tcx>, Option<TrackElem>)> {
         match stmt.kind {
-            StatementKind::Assign(box (place, _)) => Some((place, None)),
-            StatementKind::SetDiscriminant { box place, variant_index: _ } => {
-                Some((place, Some(TrackElem::Discriminant)))
+            StatementKind::Assign((place, _)) => Some((place, None)),
+            StatementKind::SetDiscriminant { ref place, variant_index: _ } => {
+                Some((**place, Some(TrackElem::Discriminant)))
             }
             StatementKind::StorageLive(local) | StatementKind::StorageDead(local) => {
                 Some((Place::from(local), None))
             }
-            | StatementKind::Intrinsic(box NonDivergingIntrinsic::Assume(..))
+            | StatementKind::Intrinsic(NonDivergingIntrinsic::Assume(..))
             // copy_nonoverlapping takes pointers and mutated the pointed-to value.
-            | StatementKind::Intrinsic(box NonDivergingIntrinsic::CopyNonOverlapping(..))
+            | StatementKind::Intrinsic(NonDivergingIntrinsic::CopyNonOverlapping(..))
             | StatementKind::AscribeUserType(..)
             | StatementKind::Coverage(..)
             | StatementKind::FakeRead(..)
@@ -518,7 +517,7 @@ impl<'a, 'tcx> TOFinder<'a, 'tcx> {
                 self.process_copy(lhs, rhs, state)
             }
             // If we expect `lhs ?= A`, we have an opportunity if we assume `constant == A`.
-            Rvalue::Aggregate(box kind, operands) => {
+            Rvalue::Aggregate(kind, operands) => {
                 let agg_ty = lhs_place.ty(self.body, self.tcx).ty;
                 let lhs = match kind {
                     // Do not support unions.
@@ -573,8 +572,8 @@ impl<'a, 'tcx> TOFinder<'a, 'tcx> {
             // Create a condition on `rhs ?= B`.
             Rvalue::BinaryOp(
                 op,
-                box (Operand::Move(operand) | Operand::Copy(operand), Operand::Constant(value))
-                | box (Operand::Constant(value), Operand::Move(operand) | Operand::Copy(operand)),
+                (Operand::Move(operand) | Operand::Copy(operand), Operand::Constant(value))
+                | (Operand::Constant(value), Operand::Move(operand) | Operand::Copy(operand)),
             ) => {
                 let equals = match op {
                     BinOp::Eq => ScalarInt::TRUE,
@@ -617,8 +616,8 @@ impl<'a, 'tcx> TOFinder<'a, 'tcx> {
         match &stmt.kind {
             // If we expect `discriminant(place) ?= A`,
             // we have an opportunity if `variant_index ?= A`.
-            StatementKind::SetDiscriminant { box place, variant_index } => {
-                let Some(discr_target) = self.place(*place, Some(TrackElem::Discriminant)) else {
+            StatementKind::SetDiscriminant { place, variant_index } => {
+                let Some(discr_target) = self.place(**place, Some(TrackElem::Discriminant)) else {
                     return;
                 };
                 let enum_ty = place.ty(self.body, self.tcx).ty;
@@ -633,15 +632,13 @@ impl<'a, 'tcx> TOFinder<'a, 'tcx> {
                 self.process_immediate(discr_target, discr, state)
             }
             // If we expect `lhs ?= true`, we have an opportunity if we assume `lhs == true`.
-            StatementKind::Intrinsic(box NonDivergingIntrinsic::Assume(
+            StatementKind::Intrinsic(NonDivergingIntrinsic::Assume(
                 Operand::Copy(place) | Operand::Move(place),
             )) => {
                 let Some(place) = self.place_value(*place, None) else { return };
                 state.fulfill_matches(place, ScalarInt::TRUE);
             }
-            StatementKind::Assign(box (lhs_place, rhs)) => {
-                self.process_assign(lhs_place, rhs, state)
-            }
+            StatementKind::Assign((lhs_place, rhs)) => self.process_assign(lhs_place, rhs, state),
             _ => {}
         }
     }

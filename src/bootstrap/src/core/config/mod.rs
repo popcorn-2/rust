@@ -28,10 +28,12 @@ mod tests;
 pub mod toml;
 
 use std::collections::HashSet;
+use std::fmt::Display;
 use std::path::PathBuf;
+use std::str::FromStr;
 
-use build_helper::exit;
 pub use config::*;
+use serde::de::Unexpected;
 use serde::{Deserialize, Deserializer};
 use serde_derive::Deserialize;
 pub use target_selection::TargetSelection;
@@ -40,8 +42,7 @@ pub use toml::change_id::ChangeId;
 pub use toml::rust::BootstrapOverrideLld;
 pub use toml::target::Target;
 
-use crate::Display;
-use crate::str::FromStr;
+use crate::utils::helpers;
 
 // We are using a decl macro instead of a derive proc macro here to reduce the compile time of bootstrap.
 #[macro_export]
@@ -63,8 +64,8 @@ macro_rules! define_config {
         impl Merge for $name {
             fn merge(
                 &mut self,
-                _parent_config_path: Option<PathBuf>,
-                _included_extensions: &mut HashSet<PathBuf>,
+                _parent_config_path: Option<std::path::PathBuf>,
+                _included_extensions: &mut std::collections::HashSet<std::path::PathBuf>,
                 other: Self,
                 replace: ReplaceOpt
             ) {
@@ -87,7 +88,7 @@ macro_rules! define_config {
                                         panic!("overriding existing option")
                                     } else {
                                         eprintln!("overriding existing option: `{}`", stringify!($field));
-                                        exit!(2);
+                                        $crate::utils::helpers::exit_process(2);
                                     }
                                 } else {
                                     self.$field = other.$field;
@@ -213,7 +214,7 @@ impl<T> Merge for Option<T> {
                             panic!("overriding existing option")
                         } else {
                             eprintln!("overriding existing option");
-                            exit!(2);
+                            helpers::exit_process(2);
                         }
                     } else {
                         *self = other;
@@ -248,6 +249,35 @@ impl<'de> Deserialize<'de> for CompilerBuiltins {
             StringOrBool::Bool(true) => Self::BuildLLVMFuncs,
             StringOrBool::String(path) => Self::LinkLLVMBuiltinsLib(path),
         })
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum Allocator {
+    System,
+    Jemalloc,
+}
+
+impl Allocator {
+    pub fn feature_name(self) -> Option<&'static str> {
+        match self {
+            Allocator::System => None,
+            Allocator::Jemalloc => Some("jemalloc"),
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for Allocator {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let name = String::deserialize(deserializer)?;
+        match name.as_str() {
+            "system" => Ok(Self::System),
+            "jemalloc" => Ok(Self::Jemalloc),
+            other => Err(serde::de::Error::unknown_variant(other, &["system", "jemalloc"])),
+        }
     }
 }
 
@@ -378,6 +408,53 @@ impl std::str::FromStr for SplitDebuginfo {
     }
 }
 
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum CompressDebuginfo {
+    Zlib,
+    #[default]
+    Off,
+}
+
+impl CompressDebuginfo {
+    fn default_on() -> Self {
+        Self::Zlib
+    }
+}
+
+impl std::str::FromStr for CompressDebuginfo {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "zlib" => Ok(CompressDebuginfo::Zlib),
+            "off" => Ok(CompressDebuginfo::Off),
+            _ => Err(()),
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for CompressDebuginfo {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        use serde::de::Error;
+
+        Ok(match Deserialize::deserialize(deserializer)? {
+            StringOrBool::Bool(value) => {
+                if value {
+                    CompressDebuginfo::default_on()
+                } else {
+                    CompressDebuginfo::Off
+                }
+            }
+            StringOrBool::String(value) => CompressDebuginfo::from_str(&value).map_err(|_| {
+                D::Error::invalid_value(Unexpected::Str(&value), &"`zlib` or `off`")
+            })?,
+        })
+    }
+}
+
 /// Describes how to handle conflicts in merging two `TomlConfig`
 #[derive(Copy, Clone, Debug)]
 pub enum ReplaceOpt {
@@ -433,6 +510,27 @@ pub enum GccCiMode {
     /// If it is not available on CI, it will be built locally instead.
     #[default]
     DownloadFromCi,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum DebuggerPath {
+    /// Use a debugger at this path
+    Path(PathBuf),
+    /// Try to automatically discover a version of a debugger from the environment
+    Discover,
+}
+
+impl<'d> Deserialize<'d> for DebuggerPath {
+    fn deserialize<D>(deserializer: D) -> Result<Self, <D as serde::Deserializer<'d>>::Error>
+    where
+        D: serde::Deserializer<'d>,
+    {
+        let value = String::deserialize(deserializer)?;
+        match value.as_str() {
+            "discover" => Ok(Self::Discover),
+            path => Ok(Self::Path(PathBuf::from(path))),
+        }
+    }
 }
 
 pub fn threads_from_config(v: u32) -> u32 {

@@ -10,6 +10,7 @@ use rustc_middle::ty::layout::TyAndLayout;
 use rustc_middle::ty::{Ty, TyCtxt};
 use tracing::trace;
 
+use crate::PassPolicy;
 use crate::patch::MirPatch;
 
 pub(super) struct UnreachableEnumBranching;
@@ -36,7 +37,7 @@ fn get_switched_on_type<'tcx>(
 
     let stmt_before_term = block_data.statements.last()?;
 
-    if let StatementKind::Assign(box (l, Rvalue::Discriminant(place))) = stmt_before_term.kind
+    if let StatementKind::Assign((l, Rvalue::Discriminant(place))) = stmt_before_term.kind
         && l.as_local() == Some(local)
     {
         let ty = place.ty(body, tcx).ty;
@@ -77,8 +78,8 @@ fn variant_discriminants<'tcx>(
 }
 
 impl<'tcx> crate::MirPass<'tcx> for UnreachableEnumBranching {
-    fn is_enabled(&self, sess: &rustc_session::Session) -> bool {
-        sess.mir_opt_level() > 0
+    fn policy(&self, sess: &rustc_session::Session) -> PassPolicy {
+        PassPolicy::optimization(sess.mir_opt_level() > 0)
     }
 
     fn run_pass(&self, tcx: TyCtxt<'tcx>, body: &mut Body<'tcx>) {
@@ -168,9 +169,5 @@ impl<'tcx> crate::MirPass<'tcx> for UnreachableEnumBranching {
         }
 
         patch.apply(body);
-    }
-
-    fn is_required(&self) -> bool {
-        false
     }
 }

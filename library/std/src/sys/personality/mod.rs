@@ -14,10 +14,7 @@ mod dwarf;
 
 #[cfg(not(any(test, doctest)))]
 cfg_select! {
-    target_os = "emscripten" => {
-        mod emcc;
-    }
-    any(target_env = "msvc", target_family = "wasm", target_os = "motor") => {
+    any(target_env = "msvc", target_family = "wasm") => {
         // This is required by the compiler to exist (e.g., it's a lang item),
         // but it's never actually called by the compiler because
         // __CxxFrameHandler3 (msvc) / __gxx_wasm_personality_v0 (wasm) is the
@@ -34,7 +31,7 @@ cfg_select! {
         target_os = "xous",
         target_os = "solid_asp3",
         target_os = "popcorn",
-        all(target_family = "unix", not(target_os = "espidf"), not(target_os = "l4re"), not(target_os = "nuttx")),
+        all(target_family = "unix", not(target_os = "espidf"), not(target_os = "nuttx")),
         all(target_vendor = "fortanix", target_env = "sgx"),
     ) => {
         mod gcc;
@@ -45,6 +42,7 @@ cfg_select! {
         // - os=uefi
         // - os=espidf
         // - os=hermit
+        // - os=motor
         // - nvptx64-nvidia-cuda
         // - arch=avr
     }

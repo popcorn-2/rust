@@ -1,6 +1,6 @@
 use rustc_abi::FieldIdx;
 use rustc_data_structures::flat_map_in_place::FlatMapInPlace;
-use rustc_hir::LangItem;
+use rustc_hir::attrs::lang_items::LangItem;
 use rustc_index::IndexVec;
 use rustc_index::bit_set::{DenseBitSet, GrowableBitSet};
 use rustc_middle::bug;
@@ -10,13 +10,14 @@ use rustc_middle::ty::{self, Ty, TyCtxt};
 use rustc_mir_dataflow::value_analysis::{excluded_locals, iter_fields};
 use tracing::{debug, instrument};
 
+use crate::PassPolicy;
 use crate::patch::MirPatch;
 
 pub(super) struct ScalarReplacementOfAggregates;
 
 impl<'tcx> crate::MirPass<'tcx> for ScalarReplacementOfAggregates {
-    fn is_enabled(&self, sess: &rustc_session::Session) -> bool {
-        sess.mir_opt_level() >= 2
+    fn policy(&self, sess: &rustc_session::Session) -> PassPolicy {
+        PassPolicy::optimization(sess.mir_opt_level() >= 2)
     }
 
     #[instrument(level = "debug", skip(self, tcx, body))]
@@ -49,10 +50,6 @@ impl<'tcx> crate::MirPass<'tcx> for ScalarReplacementOfAggregates {
             }
         }
     }
-
-    fn is_required(&self) -> bool {
-        false
-    }
 }
 
 /// Identify all locals that are not eligible for SROA.
@@ -72,7 +69,9 @@ fn escaping_locals<'tcx>(
             return true;
         }
         if let ty::Adt(def, _args) = ty.kind()
-            && (def.repr().simd() || tcx.is_lang_item(def.did(), LangItem::DynMetadata))
+            && (def.repr().simd()
+                || def.repr().scalable()
+                || tcx.is_lang_item(def.did(), LangItem::DynMetadata))
         {
             // Exclude #[repr(simd)] types so that they are not de-optimized into an array
             // (MCP#838 banned projections into SIMD types, but if the value is unused
@@ -337,7 +336,7 @@ impl<'tcx, 'll> MutVisitor<'tcx> for ReplacementVisitor<'tcx, 'll> {
             // a_1 = y
             // ...
             // ```
-            StatementKind::Assign(box (place, Rvalue::Aggregate(_, ref mut operands))) => {
+            StatementKind::Assign((place, Rvalue::Aggregate(_, ref mut operands))) => {
                 if let Some(local) = place.as_local()
                     && let Some(final_locals) = &self.replacements.fragments[local]
                 {
@@ -368,7 +367,7 @@ impl<'tcx, 'll> MutVisitor<'tcx> for ReplacementVisitor<'tcx, 'll> {
             // ...
             // ```
             // ConstProp will pick up the pieces and replace them by actual constants.
-            StatementKind::Assign(box (place, Rvalue::Use(Operand::Constant(_), retag))) => {
+            StatementKind::Assign((place, Rvalue::Use(Operand::Constant(_), retag))) => {
                 if let Some(final_locals) = self.replacements.place_fragments(place) {
                     // Put the deaggregated statements *after* the original one.
                     let location = location.successor_within_block();
@@ -392,7 +391,7 @@ impl<'tcx, 'll> MutVisitor<'tcx> for ReplacementVisitor<'tcx, 'll> {
             // a_1 = move? place.1
             // ...
             // ```
-            StatementKind::Assign(box (
+            StatementKind::Assign((
                 lhs,
                 Rvalue::Use(ref op @ (Operand::Copy(rplace) | Operand::Move(rplace)), retag),
             )) => {

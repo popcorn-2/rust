@@ -2,7 +2,7 @@
 
 use std::pin::Pin;
 
-#[pin_v2] //~ ERROR the `#[pin_v2]` attribute is an experimental feature
+#[pin_v2] //~ ERROR the `pin_v2` attribute is an experimental feature
 struct Foo;
 
 impl Foo {
@@ -14,6 +14,14 @@ impl Foo {
 impl Drop for Foo {
     //~^ ERROR not all trait items implemented, missing: `drop`
     fn pin_drop(&pin mut self) {} //~ ERROR pinned reference syntax is experimental
+    //~^ ERROR use of unstable library feature `pin_ergonomics` [E0658]
+}
+
+struct Sugar;
+
+impl Drop for Sugar {
+    //~^ ERROR not all trait items implemented, missing: `drop`
+    fn drop(&pin mut self) {} //~ ERROR pinned reference syntax is experimental
     //~^ ERROR use of unstable library feature `pin_ergonomics` [E0658]
 }
 

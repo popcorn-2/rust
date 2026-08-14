@@ -1,3 +1,5 @@
+//@ compile-flags: -Z deduplicate-diagnostics=yes
+
 #![feature(fn_delegation)]
 
 trait Trait {
@@ -13,7 +15,6 @@ fn foo(x: i32) -> i32 { x }
 
 fn bar<T: Default>(_: T) {
     reuse Trait::static_method {
-    //~^ ERROR mismatched types
         let _ = T::Default();
         //~^ ERROR can't use generic parameters from outer item
     }
@@ -30,7 +31,7 @@ fn main() {
         reuse_ptr(0)
     }
     self.0;
-    //~^ ERROR expected value, found module `self`
+    //~^ ERROR cannot find value `self` in this scope
     let z = x;
     //~^ ERROR cannot find value `x` in this scope
 }

@@ -1,4 +1,3 @@
-use rustc_data_structures::stack::ensure_sufficient_stack;
 use tracing::{debug, instrument, trace};
 
 pub(crate) mod query_context;
@@ -160,7 +159,7 @@ where
         if let Some(answer) = cache.get(&(src_state, dst_state)) {
             answer.clone()
         } else {
-            let answer = ensure_sufficient_stack(|| self.answer_impl(cache, src_state, dst_state));
+            let answer = self.answer_impl(cache, src_state, dst_state);
             if let Some(..) = cache.insert((src_state, dst_state), answer.clone()) {
                 panic!("failed to correctly cache transmutability")
             }
@@ -330,7 +329,7 @@ impl<R, T> Answer<R, T> {
             // If either is an error, return it
             | (Answer::No(reason), _) | (_, Answer::No(reason)) => Answer::No(reason),
             // If only one side has a condition, pass it along
-            | (Answer::Yes, other) | (other, Answer::Yes) => other,
+            (Answer::Yes, other) | (other, Answer::Yes) => other,
             // If both sides have IfAll conditions, merge them
             (Answer::If(Condition::IfAll(mut lhs)), Answer::If(Condition::IfAll(ref mut rhs))) => {
                 lhs.append(rhs);

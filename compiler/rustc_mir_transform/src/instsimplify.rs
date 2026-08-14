@@ -1,7 +1,8 @@
 //! Performs various peephole optimizations.
 
 use rustc_abi::{ExternAbi, Integer};
-use rustc_hir::{LangItem, find_attr};
+use rustc_hir::attrs::lang_items::LangItem;
+use rustc_hir::find_attr;
 use rustc_index::IndexVec;
 use rustc_middle::bug;
 use rustc_middle::mir::visit::MutVisitor;
@@ -10,6 +11,7 @@ use rustc_middle::ty::layout::{IntegerExt, ValidityRequirement};
 use rustc_middle::ty::{self, GenericArgsRef, Ty, TyCtxt, layout};
 use rustc_span::{Symbol, sym};
 
+use crate::PassPolicy;
 use crate::simplify::simplify_duplicate_switch_targets;
 
 pub(super) enum InstSimplify {
@@ -25,8 +27,8 @@ impl<'tcx> crate::MirPass<'tcx> for InstSimplify {
         }
     }
 
-    fn is_enabled(&self, sess: &rustc_session::Session) -> bool {
-        sess.mir_opt_level() > 0
+    fn policy(&self, sess: &rustc_session::Session) -> PassPolicy {
+        PassPolicy::optimization(sess.mir_opt_level() > 0)
     }
 
     fn run_pass(&self, tcx: TyCtxt<'tcx>, body: &mut Body<'tcx>) {
@@ -41,7 +43,7 @@ impl<'tcx> crate::MirPass<'tcx> for InstSimplify {
         };
         for block in body.basic_blocks.as_mut() {
             for statement in block.statements.iter_mut() {
-                let StatementKind::Assign(box (.., rvalue)) = &mut statement.kind else {
+                let StatementKind::Assign((.., rvalue)) = &mut statement.kind else {
                     continue;
                 };
 
@@ -62,10 +64,6 @@ impl<'tcx> crate::MirPass<'tcx> for InstSimplify {
             simplify_duplicate_switch_targets(terminator);
         }
     }
-
-    fn is_required(&self) -> bool {
-        false
-    }
 }
 
 struct InstSimplifyContext<'a, 'tcx> {
@@ -79,7 +77,7 @@ impl<'tcx> InstSimplifyContext<'_, 'tcx> {
     /// GVN can also do this optimization, but GVN is only run at mir-opt-level 2 so having this in
     /// InstSimplify helps unoptimized builds.
     fn simplify_repeated_aggregate(&self, rvalue: &mut Rvalue<'tcx>) {
-        let Rvalue::Aggregate(box AggregateKind::Array(_), fields) = &*rvalue else {
+        let Rvalue::Aggregate(AggregateKind::Array(_), fields) = &*rvalue else {
             return;
         };
         if fields.len() < 5 {
@@ -106,7 +104,7 @@ impl<'tcx> InstSimplifyContext<'_, 'tcx> {
 
     /// Transform boolean comparisons into logical operations.
     fn simplify_bool_cmp(&self, rvalue: &mut Rvalue<'tcx>) {
-        let Rvalue::BinaryOp(op @ (BinOp::Eq | BinOp::Ne), box (a, b)) = &*rvalue else { return };
+        let Rvalue::BinaryOp(op @ (BinOp::Eq | BinOp::Ne), (a, b)) = &*rvalue else { return };
         *rvalue = match (op, self.try_eval_bool(a), self.try_eval_bool(b)) {
             // Transform "Eq(a, true)" ==> "a"
             (BinOp::Eq, _, Some(true)) => Rvalue::Use(a.clone(), WithRetag::Yes),
@@ -170,7 +168,7 @@ impl<'tcx> InstSimplifyContext<'_, 'tcx> {
 
     /// Transform `Aggregate(RawPtr, [p, ()])` ==> `Cast(PtrToPtr, p)`.
     fn simplify_ptr_aggregate(&self, rvalue: &mut Rvalue<'tcx>) {
-        if let Rvalue::Aggregate(box AggregateKind::RawPtr(pointee_ty, mutability), fields) = rvalue
+        if let Rvalue::Aggregate(AggregateKind::RawPtr(pointee_ty, mutability), fields) = rvalue
             && let meta_ty = fields.raw[1].ty(self.local_decls, self.tcx)
             && meta_ty.is_unit()
         {
@@ -446,7 +444,7 @@ fn resolve_rust_intrinsic<'tcx>(
 ) -> Option<(Symbol, GenericArgsRef<'tcx>)> {
     let ty::FnDef(def_id, args) = *func_ty.kind() else { return None };
     let intrinsic = tcx.intrinsic(def_id)?;
-    Some((intrinsic.name, args))
+    Some((intrinsic.name, args.no_bound_vars().unwrap()))
 }
 
 struct SimplifyUbCheck<'tcx> {

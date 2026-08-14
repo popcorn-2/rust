@@ -1059,23 +1059,8 @@ impl Intrinsic {
 
     /// Add a big endian implementation
     fn generate_big_endian(&self, variant: &mut Intrinsic) {
-        /* We can't always blindly reverse the bits only in certain conditions
-         * do we need a different order - thus this allows us to have the
-         * ability to do so without having to play codegolf with the yaml AST */
-        let should_reverse = {
-            if let Some(should_reverse) = variant.big_endian_inverse {
-                should_reverse
-            } else if variant.compose.len() == 1 {
-                match &variant.compose[0] {
-                    Expression::FnCall(fn_call) => fn_call.0.to_string() == "transmute",
-                    _ => false,
-                }
-            } else {
-                false
-            }
-        };
-
-        if !should_reverse {
+        // We only reverse if it was specifically requested
+        if !variant.big_endian_inverse.unwrap_or(false) {
             return;
         }
 
@@ -1619,6 +1604,7 @@ impl Intrinsic {
                             (Some(BaseTypeKind::Float), Some(BaseTypeKind::Float)) => ex,
                             (Some(BaseTypeKind::UInt), Some(BaseTypeKind::UInt)) => ex,
                             (Some(BaseTypeKind::Poly), Some(BaseTypeKind::Poly)) => ex,
+                            (Some(BaseTypeKind::Bool), Some(BaseTypeKind::Bool)) => ex,
 
                             (None, None) => ex,
                             _ => unreachable!(
@@ -1816,9 +1802,8 @@ fn create_tokens(intrinsic: &Intrinsic, endianness: Endianness, tokens: &mut Tok
             body_current = &mut body_unsafe;
         }
         ex.to_tokens(body_current);
-        let is_last = matches!(pos, itertools::Position::Last | itertools::Position::Only);
         let is_llvm_link = matches!(ex, Expression::LLVMLink(_));
-        if !is_last && !is_llvm_link {
+        if !pos.is_last && !is_llvm_link {
             body_current.append(Punct::new(';', Spacing::Alone));
         }
     }

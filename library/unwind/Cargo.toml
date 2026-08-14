@@ -4,9 +4,6 @@ version = "0.0.0"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/rust-lang/rust.git"
 edition = "2024"
-include = [
-  '/libunwind/*',
-]
 
 [lib]
 test = false
@@ -36,7 +33,6 @@ system-llvm-libunwind = []
 [lints.rust.unexpected_cfgs]
 level = "warn"
 check-cfg = [
-	'cfg(emscripten_wasm_eh)',
 	'cfg(target_arch, values("loongarch32"))',
 	# #[cfg(bootstrap)] x86_64-unknown-popcorn,
 	'cfg(target_os, values("popcorn"))',
