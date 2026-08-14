@@ -32,33 +32,6 @@ pub trait DirExt: Sealed + Sized {
     fn config_dir() -> Option<Self>;
     
     fn working_dir() -> Option<Self>;
-
-    /// Attempts to open a file according to `opts` relative to this directory.
-    ///
-    /// # Errors
-    ///
-    /// This function will return an error if `path` does not point to an existing file.
-    /// Other errors may also be returned according to [`OpenOptions::open`].
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// #![feature(dirfd, popcorn_std)]
-    /// use std::{fs::{Dir, OpenOptions}, io::{self, Write}};
-    /// use std::os::popcorn::fs::DirExt;
-    ///
-    /// fn main() -> io::Result<()> {
-    ///     let dir = Dir::open("foo")?;
-    ///     let mut opts = OpenOptions::new();
-    ///     opts.read(true).write(true);
-    ///     let mut f = dir.open_file_with("bar.txt", &opts)?;
-    ///     f.write(b"Hello, world!")?;
-    ///     let contents = io::read_to_string(f)?;
-    ///     assert_eq!(contents, "Hello, world!");
-    ///     Ok(())
-    /// }
-    /// ```
-    fn open_file_with<P: AsRef<Path>>(&self, path: P, opts: &OpenOptions) -> io::Result<File>;
 }
 
 impl Sealed for Dir {}
@@ -70,9 +43,5 @@ impl DirExt for Dir {
 
     fn working_dir() -> Option<Self> {
         None
-    }
-
-    fn open_file_with<P: AsRef<Path>>(&self, path: P, opts: &OpenOptions) -> io::Result<File> {
-        self.as_inner().open_file(path.as_ref(), opts.as_inner()).map(|f| File::from_inner(f))
     }
 }
