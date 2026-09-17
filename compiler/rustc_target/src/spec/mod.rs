@@ -1695,6 +1695,8 @@ supported_targets! {
     ("i686-oe-linux-gnu", i686_oe_linux_gnu),
     ("riscv64-oe-linux-gnu", riscv64_oe_linux_gnu),
     ("x86_64-oe-linux-gnu", x86_64_oe_linux_gnu),
+    
+    ("x86_64-unknown-popcorn", x86_64_unknown_popcorn),
 }
 
 /// Cow-Vec-Str: Cow<'static, [Cow<'static, str>]>
@@ -1863,6 +1865,7 @@ crate::target_spec_enum! {
         Nto = "nto",
         NuttX = "nuttx",
         OpenBsd = "openbsd",
+        Popcorn = "popcorn",
         Ps3 = "ps3",
         Psp = "psp",
         Psx = "psx",

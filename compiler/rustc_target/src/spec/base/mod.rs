@@ -27,6 +27,7 @@ pub(crate) mod motor;
 pub(crate) mod msvc;
 pub(crate) mod netbsd;
 pub(crate) mod openbsd;
+pub(crate) mod popcorn;
 pub(crate) mod qnx_sdp;
 pub(crate) mod redox;
 pub(crate) mod solaris;
