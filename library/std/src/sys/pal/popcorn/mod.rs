@@ -2,7 +2,8 @@
 
 mod startup;
 
-pub use startup::ADDRESS_SPACE_HANDLE;
+#[allow(unused)]
+pub use startup::{ADDRESS_SPACE_HANDLE, STDIN_HANDLE, STDOUT_HANDLE, STDERR_HANDLE};
 
 use crate::io;
 use core::sync::atomic::Ordering;
