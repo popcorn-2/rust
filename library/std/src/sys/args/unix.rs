@@ -9,7 +9,9 @@ pub use super::common::Args;
 use crate::ffi::CStr;
 #[cfg(target_os = "hermit")]
 use crate::os::hermit::ffi::OsStringExt;
-#[cfg(not(target_os = "hermit"))]
+#[cfg(target_os = "popcorn")]
+use crate::ffi::OsString;
+#[cfg(not(any(target_os = "hermit", target_os = "popcorn")))]
 use crate::os::unix::ffi::OsStringExt;
 
 /// One-time global initialization.
@@ -55,7 +57,9 @@ pub fn args() -> Args {
         // SAFETY: Just checked that the pointer is not NULL, and arguments
         // are otherwise guaranteed to be valid C strings.
         let cstr = unsafe { CStr::from_ptr(ptr) };
-        vec.push(OsStringExt::from_vec(cstr.to_bytes().to_vec()));
+        #[cfg(not(target_os = "popcorn"))] vec.push(OsStringExt::from_vec(cstr.to_bytes().to_vec()));
+        // SAFETY: Popcorn strings are always UTF-8
+        #[cfg(target_os = "popcorn")] vec.push(unsafe { OsString::from_encoded_bytes_unchecked(cstr.to_bytes().to_vec()) });
     }
 
     Args::new(vec)
@@ -85,6 +89,7 @@ pub fn args() -> Args {
     target_os = "hurd",
     target_os = "rtems",
     target_os = "nuttx",
+    target_os = "popcorn",
 ))]
 mod imp {
     use crate::ffi::c_char;

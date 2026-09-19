@@ -10,6 +10,7 @@
     target_os = "uefi",
     target_os = "wasi",
     target_os = "xous",
+    target_os = "popcorn",
 ))]
 mod common;
 
@@ -24,6 +25,7 @@ cfg_select! {
             ))
         ),
         target_os = "hermit",
+        target_os = "popcorn",
     ) => {
         mod unix;
         pub use unix::*;

@@ -7,9 +7,9 @@ pub struct ProcInfo {
 	magic: [u8; 7],
 	version: u8,
 	// version 0 fields
-	argc: core::ffi::c_int,
-	argv: *const *const core::ffi::c_char,
-	named_handles: *const core::ffi::c_void,
+	pub argc: core::ffi::c_int,
+	pub argv: *const *const core::ffi::c_char,
+	pub named_handles: *const core::ffi::c_void,
 	info_ty: usize,
 	info_ptr: *const core::ffi::c_void,
 }
