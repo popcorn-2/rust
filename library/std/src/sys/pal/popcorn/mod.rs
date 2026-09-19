@@ -6,7 +6,6 @@ mod startup;
 pub use startup::{ADDRESS_SPACE_HANDLE, MAIN_THREAD_HANDLE, STDIN_HANDLE, STDOUT_HANDLE, STDERR_HANDLE};
 
 use crate::io;
-use core::sync::atomic::Ordering;
 
 pub fn unsupported<T>() -> io::Result<T> {
     Err(unsupported_err())
@@ -22,12 +21,7 @@ pub fn abort_internal() -> ! {
 
 // SAFETY: must be called only once during runtime initialization.
 // NOTE: this is not guaranteed to run, for example when Rust code is called externally.
-pub unsafe fn init(_argc: isize, _argv: *const *const u8, _sigpipe: u8) {
-    let proc_info = unsafe { &*startup::PROC_INFO.load(Ordering::Relaxed) };
-    unsafe {
-        crate::sys::args::init(proc_info.argc as isize, proc_info.argv.cast());
-    }
-}
+pub unsafe fn init(_argc: isize, _argv: *const *const u8, _sigpipe: u8) {}
 
 // SAFETY: must be called only once during runtime cleanup.
 // NOTE: this is not guaranteed to run, for example when the program aborts.
