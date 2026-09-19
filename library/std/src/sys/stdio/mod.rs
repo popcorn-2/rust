@@ -45,6 +45,10 @@ cfg_select! {
         mod zkvm;
         pub use zkvm::*;
     }
+    target_os = "popcorn" => {
+        mod popcorn;
+        pub use popcorn::*;
+    }
     _ => {
         mod unsupported;
         pub use unsupported::*;
