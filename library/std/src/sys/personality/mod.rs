@@ -32,6 +32,7 @@ cfg_select! {
         target_os = "solid_asp3",
         all(target_family = "unix", not(target_os = "espidf"), not(target_os = "nuttx")),
         all(target_vendor = "fortanix", target_env = "sgx"),
+        target_os = "popcorn",
     ) => {
         mod gcc;
     }

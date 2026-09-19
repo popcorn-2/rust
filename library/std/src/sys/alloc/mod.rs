@@ -108,6 +108,10 @@ cfg_select! {
         mod zkvm;
         use zkvm as imp;
     }
+    target_os = "popcorn" => {
+        mod popcorn;
+        use popcorn as imp;
+    }
 }
 
 pub use imp::{alloc, dealloc, realloc};

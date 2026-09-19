@@ -40,6 +40,7 @@ cfg_select! {
         target_os = "zkvm",
         target_os = "trusty",
         target_os = "vexos",
+        target_os = "popcorn",
     ) => {
         mod no_threads;
         pub use no_threads::{EagerStorage, LazyStorage, thread_local_inner};
@@ -111,6 +112,7 @@ pub(crate) mod guard {
             target_os = "zkvm",
             target_os = "trusty",
             target_os = "vexos",
+            target_os = "popcorn", // FIXME(popcorn)
         ) => {
             pub(crate) fn enable() {
                 // FIXME: Right now there is no concept of "thread exit" on
@@ -119,9 +121,12 @@ pub(crate) mod guard {
                 // to be expected to call. For now we just leak everything, but
                 // if such a function starts to exist it will probably need to
                 // iterate the destructor list with these functions:
-                #[cfg(all(target_family = "wasm", target_feature = "atomics"))]
+                #[cfg(any(target_os = "popcorn", all(target_family = "wasm", target_feature = "atomics")))]
                 #[allow(unused)]
                 use super::destructors::run;
+                #[cfg(target_os = "popcorn")]
+                #[allow(unused)]
+                use super::destructors::register;
                 #[allow(unused)]
                 use crate::rt::thread_cleanup;
             }

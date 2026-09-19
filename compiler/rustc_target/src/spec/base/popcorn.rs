@@ -22,6 +22,8 @@ pub(crate) fn opts() -> TargetOptions {
         crt_static_respected: true,
         crt_static_allows_dylibs: true,
         panic_strategy: PanicStrategy::Unwind,
+        // HACK
+        singlethread: true,
         ..Default::default()
     }
 }
