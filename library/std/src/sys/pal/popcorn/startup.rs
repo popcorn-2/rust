@@ -1,4 +1,5 @@
-use crate::sync::atomic::{AtomicPtr, AtomicI32};
+use crate::sync::atomic::{AtomicPtr, AtomicI32, Ordering};
+use crate::ffi::CStr;
 
 pub static PROC_INFO: AtomicPtr<ProcInfo> = AtomicPtr::new(core::ptr::null_mut());
 
@@ -85,7 +86,7 @@ _start:
 );
 
 extern "C" fn startup() -> ! {
-    let proc_info = unsafe { &*startup::PROC_INFO.load(Ordering::Relaxed) };
+    let proc_info = unsafe { &*PROC_INFO.load(Ordering::Relaxed) };
 
     // Locate handles for libstd
     let mut handle_ptr = proc_info.named_handles;
