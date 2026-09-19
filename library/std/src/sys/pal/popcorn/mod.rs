@@ -32,3 +32,10 @@ pub unsafe fn init(_argc: isize, _argv: *const *const u8, _sigpipe: u8) {
 // SAFETY: must be called only once during runtime cleanup.
 // NOTE: this is not guaranteed to run, for example when the program aborts.
 pub unsafe fn cleanup() {}
+
+#[cfg(target_arch = "x86_64")]
+pub fn get_syscall_trampoline() -> *mut u8 {
+    let ptr: *mut u8;
+    unsafe { core::arch::asm!("rdgsbase {}", out(reg) ptr, options(nostack, nomem, preserves_flags)); }
+    ptr
+}
