@@ -3,32 +3,47 @@
 
 use crate::alloc::Layout;
 use crate::ptr;
-use crate::sync::atomic::{AtomicBool, Ordering};
+use crate::sync::atomic::Ordering;
 
 static mut DLMALLOC: dlmalloc::Dlmalloc<Popcorn> = dlmalloc::Dlmalloc::new_with_allocator(Popcorn);
 
 struct Popcorn;
 
-#[repr(C, align(4096))]
-struct Heap([u8; 4096*16]);
-
-static mut HEAP: Heap = Heap([0; 4096*16]);
-
 unsafe impl dlmalloc::Allocator for Popcorn {
     /// Allocs system resources
-    fn alloc(&self, _size: usize) -> (*mut u8, usize, u32) {
-        static INIT: AtomicBool = AtomicBool::new(false);
-
-        if !INIT.swap(true, Ordering::Relaxed) {
-            // FIXME: growable heap
-            (
-                (&raw mut HEAP).cast::<u8>(),
-                4096*16,
-                0,
-            )
-        } else {
-            (ptr::null_mut(), 0, 0)
+    fn alloc(&self, size: usize) -> (*mut u8, usize, u32) {
+        let handle = crate::sys::ADDRESS_SPACE_HANDLE.load(Ordering::Relaxed);
+        let result: isize;
+        unsafe {
+            core::arch::asm!(
+                "push rbp",
+                "push rbx",
+                "syscall",
+                "pop rbx",
+                "pop rbp",
+                in("eax") handle,
+                in("r12") 1,
+                in("rdi") size,
+                in("rsi") 0b101,
+                lateout("rax") result,
+                lateout("rcx") _,
+                lateout("rdx") _,
+                lateout("rsi") _,
+                lateout("rdi") _,
+                lateout("r8") _,
+                lateout("r9") _,
+                lateout("r10") _,
+                lateout("r11") _,
+                lateout("r12") _,
+                lateout("r13") _,
+                lateout("r14") _,
+                lateout("r15") _,
+                clobber_abi("sysv64"),
+            );
         }
+
+        if result < 0 { (ptr::null_mut(), 0, 0) }
+        else { (ptr::with_exposed_provenance_mut(result.cast_unsigned()), size, 0) }
     }
 
     fn remap(&self, _ptr: *mut u8, _oldsize: usize, _newsize: usize, _can_move: bool) -> *mut u8 {
@@ -39,8 +54,39 @@ unsafe impl dlmalloc::Allocator for Popcorn {
         false
     }
 
-    fn free(&self, _ptr: *mut u8, _size: usize) -> bool {
-        false
+    fn free(&self, ptr: *mut u8, size: usize) -> bool {
+        let handle = crate::sys::ADDRESS_SPACE_HANDLE.load(Ordering::Relaxed);
+        let result: isize;
+        unsafe {
+            core::arch::asm!(
+                "push rbp",
+                "push rbx",
+                "syscall",
+                "pop rbx",
+                "pop rbp",
+                in("eax") handle,
+                in("r12") 2,
+                in("rdi") ptr,
+                in("rsi") size,
+                lateout("rax") result,
+                lateout("rcx") _,
+                lateout("rdx") _,
+                lateout("rsi") _,
+                lateout("rdi") _,
+                lateout("r8") _,
+                lateout("r9") _,
+                lateout("r10") _,
+                lateout("r11") _,
+                lateout("r12") _,
+                lateout("r13") _,
+                lateout("r14") _,
+                lateout("r15") _,
+                clobber_abi("sysv64"),
+            );
+        }
+
+        if result < 0 { false }
+        else { true }
     }
 
     fn can_release_part(&self, _flags: u32) -> bool {

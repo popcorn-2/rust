@@ -1,6 +1,7 @@
-use crate::sync::atomic::AtomicPtr;
+use crate::sync::atomic::{AtomicPtr, AtomicI32};
 
 pub static PROC_INFO: AtomicPtr<ProcInfo> = AtomicPtr::new(core::ptr::null_mut());
+pub static ADDRESS_SPACE_HANDLE: AtomicI32 = AtomicI32::new(-1);
 
 #[repr(C)]
 pub struct ProcInfo {
@@ -19,7 +20,6 @@ core::arch::global_asm!(
 r#"
 .section .rodata
 address_space_handle_name: .asciz "address_space.main"
-thread_handle_name: .asciz "task.main"
 popcorn_startup_magic: .asciz "POPCRN"
 
 .section .text
@@ -49,6 +49,7 @@ _start:
   # request a stack
 .found_address_space:
   mov eax, dword ptr [rbx + 8]    # load handle number of address space into eax
+  mov dword ptr [{address_space_handle_storage}], eax # store handle number in global var
   mov r12, 1            # interface num for allocate_anon
   mov rdi, {stack_size} # request 16KiB
   mov rsi, 0b101        # request RW, no execute
@@ -70,6 +71,7 @@ _start:
 "#,
     stack_size = const 32 * 1024,
     proc_info_storage = sym PROC_INFO,
+    address_space_handle_storage = sym ADDRESS_SPACE_HANDLE,
     startup = sym startup,
 );
 

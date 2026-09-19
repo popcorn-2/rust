@@ -2,6 +2,8 @@
 
 mod startup;
 
+pub use startup::ADDRESS_SPACE_HANDLE;
+
 use crate::io;
 use core::sync::atomic::Ordering;
 
