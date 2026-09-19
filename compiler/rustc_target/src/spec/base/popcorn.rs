@@ -1,4 +1,4 @@
-use crate::spec::{BinaryFormat, Os, Cc, FramePointer, LinkerFlavor, Lld, RelroLevel, RelocModel, TargetOptions, PanicStrategy};
+use crate::spec::{BinaryFormat, Os, Cc, FramePointer, LinkerFlavor, Lld, RelroLevel, RelocModel, TargetOptions, PanicStrategy, LinkArgs};
 
 pub(crate) fn opts() -> TargetOptions {
     TargetOptions {
@@ -22,7 +22,16 @@ pub(crate) fn opts() -> TargetOptions {
         crt_static_respected: true,
         crt_static_allows_dylibs: true,
         panic_strategy: PanicStrategy::Unwind,
-        // HACK
+
+        pre_link_args: LinkArgs::from([
+            (LinkerFlavor::Gnu(Cc::No, Lld::Yes), vec![
+                std::borrow::Cow::Borrowed("-L=/system/lib"),
+                std::borrow::Cow::Borrowed("-l:crt1.o"),
+                std::borrow::Cow::Borrowed("-lrt_elf"),
+            ]),
+        ]),
+
+        // temporary hack until threading is supported
         singlethread: true,
         ..Default::default()
     }
