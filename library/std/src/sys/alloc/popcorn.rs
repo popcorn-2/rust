@@ -13,34 +13,15 @@ unsafe impl dlmalloc::Allocator for Popcorn {
     /// Allocs system resources
     fn alloc(&self, size: usize) -> (*mut u8, usize, u32) {
         let handle = crate::sys::ADDRESS_SPACE_HANDLE.load(Ordering::Relaxed);
-        let result: isize;
-        unsafe {
-            core::arch::asm!(
-                "push rbp",
-                "push rbx",
-                "syscall",
-                "pop rbx",
-                "pop rbp",
-                in("eax") handle,
-                in("r12") 1,
-                in("rdi") size,
-                in("rsi") 0b101,
-                lateout("rax") result,
-                lateout("rcx") _,
-                lateout("rdx") _,
-                lateout("rsi") _,
-                lateout("rdi") _,
-                lateout("r8") _,
-                lateout("r9") _,
-                lateout("r10") _,
-                lateout("r11") _,
-                lateout("r12") _,
-                lateout("r13") _,
-                lateout("r14") _,
-                lateout("r15") _,
-                clobber_abi("sysv64"),
-            );
-        }
+        let result = unsafe {
+            crate::sys::syscall!(
+                handle,
+                0,
+                1,
+                @integer = [size, 0b101],
+                @oob = [],
+            )
+        };
 
         if result < 0 { (ptr::null_mut(), 0, 0) }
         else { (ptr::with_exposed_provenance_mut(result.cast_unsigned()), size, 0) }
@@ -56,34 +37,16 @@ unsafe impl dlmalloc::Allocator for Popcorn {
 
     fn free(&self, ptr: *mut u8, size: usize) -> bool {
         let handle = crate::sys::ADDRESS_SPACE_HANDLE.load(Ordering::Relaxed);
-        let result: isize;
-        unsafe {
-            core::arch::asm!(
-                "push rbp",
-                "push rbx",
-                "syscall",
-                "pop rbx",
-                "pop rbp",
-                in("eax") handle,
-                in("r12") 2,
-                in("rdi") ptr,
-                in("rsi") size,
-                lateout("rax") result,
-                lateout("rcx") _,
-                lateout("rdx") _,
-                lateout("rsi") _,
-                lateout("rdi") _,
-                lateout("r8") _,
-                lateout("r9") _,
-                lateout("r10") _,
-                lateout("r11") _,
-                lateout("r12") _,
-                lateout("r13") _,
-                lateout("r14") _,
-                lateout("r15") _,
-                clobber_abi("sysv64"),
-            );
-        }
+
+        let result = unsafe {
+            crate::sys::syscall!(
+                handle,
+                0,
+                2,
+                @integer = [ptr.addr(), size],
+                @oob = [],
+            )
+        };
 
         if result < 0 { false }
         else { true }

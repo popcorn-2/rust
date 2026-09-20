@@ -67,39 +67,21 @@ impl io::Write for Stdout {
         let mut count = 0usize;
 
         for chunk in buf.chunks(0x1000) {
-            let result: isize;
-            unsafe {
+            let result = unsafe {
                 core::ptr::copy_nonoverlapping(
                     chunk.as_ptr(),
                     trampoline,
                     chunk.len(),
                 );
 
-                core::arch::asm!(
-                    "push rbp",
-                    "push rbx",
-                    "syscall",
-                    "pop rbx",
-                    "pop rbp",
-                    in("eax") handle,
-                    in("r12") 1,
-                    in("r8") chunk.len(),
-                    lateout("rax") result,
-                    lateout("rcx") _,
-                    lateout("rdx") _,
-                    lateout("rsi") _,
-                    lateout("rdi") _,
-                    lateout("r8") _,
-                    lateout("r9") _,
-                    lateout("r10") _,
-                    lateout("r11") _,
-                    lateout("r12") _,
-                    lateout("r13") _,
-                    lateout("r14") _,
-                    lateout("r15") _,
-                    clobber_abi("sysv64"),
-                );
-            }
+                crate::sys::syscall!(
+                    handle,
+                    1,
+                    1,
+                    @integer = [],
+                    @oob = [chunk.len()],
+                )
+            };
 
             if result < 0 { return Err(io::Error::from_raw_os_error((-result) as i32)); }
             else { count += result.cast_unsigned(); }
@@ -128,39 +110,21 @@ impl io::Write for Stderr {
         let mut count = 0usize;
 
         for chunk in buf.chunks(0x1000) {
-            let result: isize;
-            unsafe {
+            let result = unsafe {
                 core::ptr::copy_nonoverlapping(
                     chunk.as_ptr(),
                     trampoline,
                     chunk.len(),
                 );
 
-                core::arch::asm!(
-                    "push rbp",
-                    "push rbx",
-                    "syscall",
-                    "pop rbx",
-                    "pop rbp",
-                    in("eax") handle,
-                    in("r12") 1,
-                    in("r8") chunk.len(),
-                    lateout("rax") result,
-                    lateout("rcx") _,
-                    lateout("rdx") _,
-                    lateout("rsi") _,
-                    lateout("rdi") _,
-                    lateout("r8") _,
-                    lateout("r9") _,
-                    lateout("r10") _,
-                    lateout("r11") _,
-                    lateout("r12") _,
-                    lateout("r13") _,
-                    lateout("r14") _,
-                    lateout("r15") _,
-                    clobber_abi("sysv64"),
-                );
-            }
+                crate::sys::syscall!(
+                    handle,
+                    1,
+                    1,
+                    @integer = [],
+                    @oob = [chunk.len()],
+                )
+            };
 
             if result < 0 { return Err(io::Error::from_raw_os_error((-result) as i32)); }
             else { count += result.cast_unsigned(); }

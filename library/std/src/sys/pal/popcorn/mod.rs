@@ -1,9 +1,11 @@
 #![deny(unsafe_op_in_unsafe_fn)]
 
 mod startup;
+mod os;
 
 #[allow(unused)]
 pub use startup::{ADDRESS_SPACE_HANDLE, STDIN_HANDLE, STDOUT_HANDLE, STDERR_HANDLE};
+pub use os::syscall;
 
 use crate::io;
 
