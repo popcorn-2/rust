@@ -35,5 +35,9 @@ cfg_select! {
     target_os = "motor" => {
         pub use moto_rt::futex::*;
     }
+    target_os = "popcorn" => {
+        mod popcorn;
+        pub use popcorn::*;
+    }
     _ => {}
 }
