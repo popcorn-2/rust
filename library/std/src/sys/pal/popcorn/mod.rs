@@ -19,7 +19,13 @@ pub fn unsupported_err() -> io::Error {
 }
 
 pub fn abort_internal() -> ! {
-    core::intrinsics::abort();
+    unsafe {
+        core::arch::asm!(
+            "ud2",
+            r#".asciz "\033rust libstd aborted""#,
+            options(nostack, nomem, noreturn),
+        )
+    }
 }
 
 // SAFETY: must be called only once during runtime initialization.
