@@ -31,8 +31,6 @@ pub(crate) fn opts() -> TargetOptions {
             ]),
         ]),
 
-        // temporary hack until threading is supported
-        singlethread: true,
         ..Default::default()
     }
 }

@@ -126,6 +126,13 @@ cfg_select! {
         mod unsupported;
         pub use unsupported::{current_os_id, set_name};
     }
+    target_os = "popcorn" => {
+        mod popcorn;
+        pub use popcorn::{DEFAULT_MIN_STACK_SIZE, Thread, yield_now};
+        #[expect(dead_code)]
+        mod unsupported;
+        pub use unsupported::{available_parallelism, current_os_id, set_name, sleep};
+    }
     _ => {
         mod unsupported;
         pub use unsupported::{
