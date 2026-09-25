@@ -3,7 +3,7 @@
 use core::ffi::{c_int, c_void};
 
 // Use the unwinding crate as unwinder on Xous
-#[cfg(target_os = "xous")]
+#[cfg(any(target_os = "xous", target_os = "popcorn"))]
 pub use unwinding::custom_eh_frame_finder::{
     EhFrameFinder, FrameInfo, FrameInfoKind, set_custom_eh_frame_finder,
 };

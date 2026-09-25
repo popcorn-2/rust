@@ -2,6 +2,7 @@
 
 mod startup;
 mod os;
+mod unwind;
 
 #[allow(unused)]
 pub use startup::{ADDRESS_SPACE_HANDLE, STDIN_HANDLE, STDOUT_HANDLE, STDERR_HANDLE};

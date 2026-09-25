@@ -14,8 +14,8 @@ pub struct ProcInfo {
 	pub argc: core::ffi::c_int,
 	pub argv: *const *const core::ffi::c_char,
 	named_handles: *const NamedHandle,
-	info_ty: usize,
-	info_ptr: *const core::ffi::c_void,
+	pub info_ty: usize,
+	pub info_ptr: *const core::ffi::c_void,
 }
 
 #[repr(C)]

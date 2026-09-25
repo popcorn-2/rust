@@ -248,8 +248,3 @@ unsafe extern "C" {}
 #[cfg(all(target_os = "wasi", panic = "unwind"))]
 #[link(name = "unwind")]
 unsafe extern "C" {}
-
-#[cfg(target_os = "popcorn")]
-#[link(name = "unwind", kind = "static", modifiers = "-bundle", cfg(target_feature = "crt-static"))]
-#[link(name = "unwind", cfg(not(target_feature = "crt-static")))]
-unsafe extern "C" {}
